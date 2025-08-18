@@ -1,8 +1,13 @@
+esphome:
+  name: ph-ep2235-coffee
+  friendly_name: PH-EP2235-COFFEE
+
 esp32:
-  board: m5stack-atom
+  board: m5stack-atoms3
+  variant: esp32s3
   framework:
     type: esp-idf
-
+    
 # Enable logging
 logger:
   # Disable serial logging
