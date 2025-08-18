@@ -16,7 +16,8 @@ CONFIG_SCHEMA = text_sensor.text_sensor_schema(
     {
         cv.GenerateID(): cv.declare_id(StatusSensor),
         cv.Required(CONTROLLER_ID): cv.use_id(PhilipsCoffeeMachine),
-    }
+    },
+    component_type="custom"
 )
 
 async def to_code(config):
