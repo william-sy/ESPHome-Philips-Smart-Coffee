@@ -17,8 +17,7 @@ CONFIG_SCHEMA = text_sensor.text_sensor_schema(
         cv.GenerateID(): cv.declare_id(StatusSensor),
         cv.Required(CONTROLLER_ID): cv.use_id(PhilipsCoffeeMachine),
     }
-).extend(cv.COMPONENT_SCHEMA)
-
+)
 
 async def to_code(config):
     parent = await cg.get_variable(config[CONTROLLER_ID])
