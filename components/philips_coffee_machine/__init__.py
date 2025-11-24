@@ -53,6 +53,13 @@ CONFIG_SCHEMA = cv.Schema(
                 max_included=cv.TimePeriod(milliseconds=10000),
             ),
         ),
+        cv.Optional(DISPLAY_BOOT_DELAY, default="5000ms"): cv.All(
+            cv.positive_time_period_milliseconds,
+            cv.Range(
+                min=cv.TimePeriod(milliseconds=1000),
+                max_included=cv.TimePeriod(milliseconds=15000),
+            ),
+        ),
         cv.Optional(CONF_POWER_MESSAGE_REPETITIONS, default=5): cv.positive_int,
         cv.Optional(CONF_COMMAND_SET, default="EP_2220"): cv.enum(
             COMMAND_SETS, upper=True, space="_"
