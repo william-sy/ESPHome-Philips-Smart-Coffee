@@ -128,7 +128,6 @@ namespace esphome
                     ESP_LOGD(TAG, "Power trip sequence complete");
                 }
             }
-        }
 
             void Power::write_state(bool state)
             {
