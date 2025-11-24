@@ -32,12 +32,14 @@ namespace esphome
 
                         // Start power trip - cut power to display
                         bool initial = *initial_state_;
+                        ESP_LOGD(TAG, "Power trip %d starting - initial_state: %d, invert_power_pin: %d", 
+                                 power_trip_count_ + 1, initial, invert_power_pin_);
                         if (invert_power_pin_) {
                             initial = !initial;
                         }
                         bool trip_value = !initial;
-                        ESP_LOGD(TAG, "Starting power trip %d - setting pin from %d to %d (invert: %s)", 
-                                 power_trip_count_ + 1, initial, trip_value, invert_power_pin_ ? "yes" : "no");
+                        ESP_LOGD(TAG, "Cutting power to display - setting GPIO%d from %d to %d (goal: cut power)", 
+                                 power_pin_->get_pin(), initial, trip_value);
                         power_pin_->digital_write(trip_value);
                         power_trip_active_ = true;
                         power_trip_start_time_ = now;
@@ -51,9 +53,10 @@ namespace esphome
                         if (invert_power_pin_) {
                             restore_value = !restore_value;
                         }
-                        ESP_LOGD(TAG, "Completed power trip %d - restoring pin to %d", 
-                                 power_trip_count_ + 1, restore_value);
+                        ESP_LOGD(TAG, "Restoring power to display - setting GPIO%d to %d (goal: restore power)", 
+                                 power_pin_->get_pin(), restore_value);
                         power_pin_->digital_write(restore_value);
+                        ESP_LOGD(TAG, "Completed power trip %d", power_trip_count_ + 1);
                         power_trip_active_ = false;
                         last_power_trip_ = now;
                         power_trip_count_++;
@@ -88,6 +91,10 @@ namespace esphome
                             pending_power_on_commands_ = false;
                             
                             ESP_LOGD(TAG, "Power-on commands sent");
+                            
+                            // Stop power tripping - we've done our job
+                            should_power_trip_ = false;
+                            ESP_LOGD(TAG, "Power trip sequence complete");
                         }
                     }
                 }
@@ -97,7 +104,32 @@ namespace esphome
             {
                 if (state)
                 {
-                    ESP_LOGD(TAG, "Power ON requested - will power trip first, then send commands");
+                    // Check if display is already communicating (machine already on)
+                    if (this->state)
+                    {
+                        ESP_LOGD(TAG, "Power ON requested but display already communicating - just sending commands");
+                        
+                        // Send pre-power on message
+                        for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                            mainboard_uart_->write_array(command_pre_power_on);
+
+                        // Send power on message
+                        if (cleaning_)
+                        {
+                            for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                mainboard_uart_->write_array(command_power_with_cleaning);
+                        }
+                        else
+                        {
+                            for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                mainboard_uart_->write_array(command_power_without_cleaning);
+                        }
+                        mainboard_uart_->flush();
+                        ESP_LOGD(TAG, "Power-on commands sent (no power trip needed)");
+                        return;
+                    }
+                    
+                    ESP_LOGD(TAG, "Power ON requested - display not communicating, will power trip first");
                     
                     // First, perform power trip to wake up display
                     // The display needs to be communicating for commands to work properly
