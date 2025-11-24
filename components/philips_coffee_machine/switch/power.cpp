@@ -32,9 +32,12 @@ namespace esphome
 
                         // Start power trip - cut power to display
                         bool initial = *initial_state_;
+                        if (invert_power_pin_) {
+                            initial = !initial;
+                        }
                         bool trip_value = !initial;
-                        ESP_LOGD(TAG, "Starting power trip %d - setting pin from %d to %d", 
-                                 power_trip_count_ + 1, initial, trip_value);
+                        ESP_LOGD(TAG, "Starting power trip %d - setting pin from %d to %d (invert: %s)", 
+                                 power_trip_count_ + 1, initial, trip_value, invert_power_pin_ ? "yes" : "no");
                         power_pin_->digital_write(trip_value);
                         power_trip_active_ = true;
                         power_trip_start_time_ = now;
@@ -45,6 +48,9 @@ namespace esphome
                     {
                         // Restore power to display
                         bool restore_value = *initial_state_;
+                        if (invert_power_pin_) {
+                            restore_value = !restore_value;
+                        }
                         ESP_LOGD(TAG, "Completed power trip %d - restoring pin to %d", 
                                  power_trip_count_ + 1, restore_value);
                         power_pin_->digital_write(restore_value);
@@ -146,11 +152,21 @@ namespace esphome
                         should_power_trip_ = false;
                         power_trip_count_ = 0;
                         power_trip_active_ = false;
+                        pending_power_on_commands_ = false;
                     }
 
                     ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
                              state ? "ON" : "OFF", power_on_grace_period_end_, now);
                     publish_state(state);
+                    
+                    // If transitioning to OFF after grace period, clear any power trip state
+                    if (!state && now >= power_on_grace_period_end_)
+                    {
+                        should_power_trip_ = false;
+                        power_trip_count_ = 0;
+                        power_trip_active_ = false;
+                        pending_power_on_commands_ = false;
+                    }
                 }
             }
 

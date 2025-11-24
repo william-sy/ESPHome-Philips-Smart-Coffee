@@ -66,6 +66,14 @@ namespace esphome
                 }
 
                 /**
+                 * @brief Sets whether the power pin logic should be inverted
+                 */
+                void set_invert_power_pin(bool invert)
+                {
+                    invert_power_pin_ = invert;
+                }
+
+                /**
                  * @brief Sets the cleaning status of this power switch.
                  * If true the machine will clean during startup
                  */
@@ -108,6 +116,8 @@ namespace esphome
                 bool cleaning_ = true;
                 /// @brief length of power outage applied to the display (can be overridden by YAML config)
                 uint32_t power_trip_delay_ = 750;
+                /// @brief whether to invert the power pin logic
+                bool invert_power_pin_ = false;
                 /// @brief Determines wether a power trip should be performed
                 bool should_power_trip_ = false;
                 /// @brief Indicates if a power trip is currently in progress

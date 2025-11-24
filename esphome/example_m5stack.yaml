@@ -55,6 +55,8 @@ philips_coffee_machine:
   display_uart: uart_display
   mainboard_uart: uart_mainboard
   power_pin: GPIO8
+  power_trip_delay: 3000ms  # Can be adjusted via UI number entity below
+  invert_power_pin: true     # Can be toggled via UI switch entity below
   id: philip
 
 text_sensor:
@@ -68,6 +70,20 @@ switch:
     controller_id: philip
     name: "Power"
     icon: mdi:coffee-maker
+
+  # Power pin inversion control (toggle from UI)
+  - platform: template
+    name: "Invert Power Pin"
+    id: invert_power_pin_switch
+    icon: mdi:swap-vertical
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - lambda: |-
+          id(philip).set_invert_power_pin(true);
+    on_turn_off:
+      - lambda: |-
+          id(philip).set_invert_power_pin(false);
 
 button:
   - platform: philips_coffee_machine
@@ -102,3 +118,21 @@ number:
     controller_id: philip
     status_sensor_id: status
     source: COFFEE
+
+  # Power trip delay control (adjustable from UI)
+  - platform: template
+    name: "Power Trip Delay"
+    id: power_trip_delay_number
+    icon: mdi:timer-cog
+    unit_of_measurement: "ms"
+    min_value: 500
+    max_value: 10000
+    step: 500
+    initial_value: 3000
+    optimistic: true
+    mode: box
+    on_value:
+      then:
+        - lambda: |-
+            // Update the power trip delay in the controller
+            id(philip).set_power_trip_delay((uint32_t)x);

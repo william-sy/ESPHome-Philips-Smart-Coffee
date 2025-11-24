@@ -66,6 +66,7 @@ namespace esphome
             void set_invert_power_pin(bool invert)
             {
                 initial_pin_state_ = !invert;
+                invert_power_pin_ = invert;
             }
 
             /**
@@ -100,6 +101,7 @@ namespace esphome
                 power_switch->set_mainboard_uart(&mainboard_uart_);
                 power_switch->set_power_pin(power_pin_);
                 power_switch->set_power_trip_delay(power_trip_delay_);
+                power_switch->set_invert_power_pin(invert_power_pin_);
                 power_switch->set_power_message_repetitions(power_message_repetitions_);
                 power_switch->set_initial_state(&initial_pin_state_);
                 power_switches_.push_back(power_switch);
@@ -162,6 +164,9 @@ namespace esphome
 
             /// @brief the initial power pin state (may be inverted through user configuration)
             bool initial_pin_state_ = true;
+
+            /// @brief whether the power pin should be inverted
+            bool invert_power_pin_ = false;
 
             /// @brief the number of message repetitions to use while turning on the machine
             uint power_message_repetitions_ = 5;
