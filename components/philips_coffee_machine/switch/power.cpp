@@ -169,8 +169,7 @@ namespace esphome
                 // Give the display time to boot and start communicating
                 if (!state && now < power_on_grace_period_end_)
                 {
-                    ESP_LOGD(TAG, "Ignoring OFF state during power-on grace period (remaining: %u ms)", 
-                             power_on_grace_period_end_ - now);
+                    // Silently ignore OFF states during grace period
                     return;
                 }
                 
