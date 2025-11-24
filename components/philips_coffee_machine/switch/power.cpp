@@ -74,14 +74,20 @@ namespace esphome
 
                     mainboard_uart_->flush();
 
+                    // Delay before power trip to ensure mainboard receives messages
+                    // This is necessary because the mainboard needs time to process
+                    // the power-on command before we cycle the display power
+                    delay(100);
+                    
                     // Perform power trip in component loop
                     should_power_trip_ = true;
                     power_trip_count_ = 0;
+                    last_power_trip_ = 0; // Trigger immediately
                     
                     // Set grace period to prevent immediate OFF detection
                     // Display needs time to boot after power trip
                     power_on_grace_period_end_ = millis() + POWER_ON_GRACE_PERIOD;
-                    ESP_LOGD(TAG, "Power ON requested, starting grace period");
+                    ESP_LOGD(TAG, "Power ON requested, messages sent, ready for power trip");
                 }
                 else
                 {
