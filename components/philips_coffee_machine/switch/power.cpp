@@ -101,11 +101,14 @@ namespace esphome
 
             void Power::update_state(bool state)
             {
+                uint32_t now = millis();
+                
                 // During grace period after power-on, ignore OFF state
                 // Give the display time to boot and start communicating
-                if (!state && millis() < power_on_grace_period_end_)
+                if (!state && now < power_on_grace_period_end_)
                 {
-                    ESP_LOGV(TAG, "Ignoring OFF state during power-on grace period");
+                    ESP_LOGD(TAG, "Ignoring OFF state during power-on grace period (remaining: %u ms)", 
+                             power_on_grace_period_end_ - now);
                     return;
                 }
                 
@@ -120,6 +123,8 @@ namespace esphome
                         power_trip_active_ = false;
                     }
 
+                    ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
+                             state ? "ON" : "OFF", power_on_grace_period_end_, now);
                     publish_state(state);
                 }
             }
