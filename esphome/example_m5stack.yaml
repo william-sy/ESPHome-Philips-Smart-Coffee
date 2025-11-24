@@ -80,9 +80,11 @@ switch:
     restore_mode: RESTORE_DEFAULT_ON
     on_turn_on:
       - lambda: |-
+          // When inverting, initial_state should be LOW (0)
           id(philip).set_invert_power_pin(true);
     on_turn_off:
       - lambda: |-
+          // When not inverting, initial_state should be HIGH (1)
           id(philip).set_invert_power_pin(false);
 
 button:

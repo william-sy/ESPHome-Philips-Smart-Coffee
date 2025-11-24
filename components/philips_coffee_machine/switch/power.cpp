@@ -64,33 +64,40 @@ namespace esphome
                         // If this was the first power trip and we have pending commands, send them now
                         if (power_trip_count_ == 1 && pending_power_on_commands_)
                         {
-                            // Wait a moment for display to start booting
-                            delay(500);
+                            ESP_LOGD(TAG, "Sending power-on commands immediately after power restore");
                             
-                            ESP_LOGD(TAG, "Sending power-on commands after display boot");
+                            // Send commands multiple times with delays to catch the display as it boots
+                            for (int attempt = 0; attempt < 3; attempt++)
+                            {
+                                ESP_LOGD(TAG, "Command attempt %d", attempt + 1);
+                                
+                                // Send pre-power on message
+                                for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                    mainboard_uart_->write_array(command_pre_power_on);
+
+                                // Send power on message
+                                if (cleaning_pending_)
+                                {
+                                    // Send power on command with cleaning
+                                    for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                        mainboard_uart_->write_array(command_power_with_cleaning);
+                                }
+                                else
+                                {
+                                    // Send power on command without cleaning
+                                    for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                        mainboard_uart_->write_array(command_power_without_cleaning);
+                                }
+
+                                mainboard_uart_->flush();
+                                
+                                if (attempt < 2)
+                                    delay(300);  // Wait between attempts
+                            }
                             
-                            // Send pre-power on message
-                            for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                                mainboard_uart_->write_array(command_pre_power_on);
-
-                            // Send power on message
-                            if (cleaning_pending_)
-                            {
-                                // Send power on command with cleaning
-                                for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                                    mainboard_uart_->write_array(command_power_with_cleaning);
-                            }
-                            else
-                            {
-                                // Send power on command without cleaning
-                                for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                                    mainboard_uart_->write_array(command_power_without_cleaning);
-                            }
-
-                            mainboard_uart_->flush();
                             pending_power_on_commands_ = false;
                             
-                            ESP_LOGD(TAG, "Power-on commands sent");
+                            ESP_LOGD(TAG, "Power-on commands sent (3 attempts)");
                             
                             // Stop power tripping - we've done our job
                             should_power_trip_ = false;
