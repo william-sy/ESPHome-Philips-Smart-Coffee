@@ -8,7 +8,8 @@
 #define MESSAGE_REPETITIONS 5
 #define POWER_TRIP_RETRY_DELAY 100
 #define MAX_POWER_TRIP_COUNT 5
-#define POWER_ON_GRACE_PERIOD 3000  // 3 seconds for display to boot after power trip
+#define POWER_ON_GRACE_PERIOD 5000  // 5 seconds for display to boot after power trip
+#define DISPLAY_POWER_CUT_DURATION 2000  // 2 seconds power cut to ensure full shutdown
 
 namespace esphome
 {
@@ -105,8 +106,8 @@ namespace esphome
                 GPIOPin *power_pin_;
                 /// @brief True if the coffee machine is supposed to clean
                 bool cleaning_ = true;
-                /// @brief length of power outage applied to the display
-                uint32_t power_trip_delay_ = 500;
+                /// @brief length of power outage applied to the display (can be overridden by YAML config)
+                uint32_t power_trip_delay_ = 750;
                 /// @brief Determines wether a power trip should be performed
                 bool should_power_trip_ = false;
                 /// @brief Indicates if a power trip is currently in progress

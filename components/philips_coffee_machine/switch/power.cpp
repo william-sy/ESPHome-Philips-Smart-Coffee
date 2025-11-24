@@ -138,8 +138,9 @@ namespace esphome
                 
                 if (this->state != state)
                 {
-                    // Stop further power trips after successfully tripping
-                    if (state && should_power_trip_)
+                    // Only stop power trip if we completed at least one full trip cycle
+                    // Don't stop if display happens to be already communicating
+                    if (state && should_power_trip_ && power_trip_count_ > 0)
                     {
                         ESP_LOGD(TAG, "Performed %i power trip(s).", power_trip_count_);
                         should_power_trip_ = false;
