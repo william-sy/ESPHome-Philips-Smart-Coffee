@@ -108,6 +108,10 @@ namespace esphome
                 uint32_t power_trip_delay_ = 500;
                 /// @brief Determines wether a power trip should be performed
                 bool should_power_trip_ = false;
+                /// @brief Indicates if a power trip is currently in progress
+                bool power_trip_active_ = false;
+                /// @brief Time when the current power trip started
+                uint32_t power_trip_start_time_ = 0;
                 /// @brief Time of last power trip
                 uint32_t last_power_trip_ = 0;
                 /// @brief nr of power performed power trips

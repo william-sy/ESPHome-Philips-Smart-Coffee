@@ -16,22 +16,37 @@ namespace esphome
 
             void Power::loop()
             {
-                if (should_power_trip_ && millis() - last_power_trip_ > power_trip_delay_ + POWER_TRIP_RETRY_DELAY)
+                if (should_power_trip_)
                 {
-                    if (power_trip_count_ >= MAX_POWER_TRIP_COUNT)
+                    uint32_t now = millis();
+                    
+                    // Check if we need to start a new power trip
+                    if (!power_trip_active_ && now - last_power_trip_ > power_trip_delay_ + POWER_TRIP_RETRY_DELAY)
                     {
-                        should_power_trip_ = false;
-                        ESP_LOGE(TAG, "Power tripping display failed!");
-                        return;
+                        if (power_trip_count_ >= MAX_POWER_TRIP_COUNT)
+                        {
+                            should_power_trip_ = false;
+                            ESP_LOGE(TAG, "Power tripping display failed!");
+                            return;
+                        }
+
+                        // Start power trip - cut power to display
+                        power_pin_->digital_write(!(*initial_state_));
+                        power_trip_active_ = true;
+                        power_trip_start_time_ = now;
+                        ESP_LOGD(TAG, "Starting power trip %d", power_trip_count_ + 1);
                     }
-
-                    // Perform power trip (invert state twice)
-                    power_pin_->digital_write(!(*initial_state_));
-                    delay(power_trip_delay_);
-                    power_pin_->digital_write(*initial_state_);
-
-                    last_power_trip_ = millis();
-                    power_trip_count_++;
+                    
+                    // Check if we need to restore power
+                    if (power_trip_active_ && now - power_trip_start_time_ >= power_trip_delay_)
+                    {
+                        // Restore power to display
+                        power_pin_->digital_write(*initial_state_);
+                        power_trip_active_ = false;
+                        last_power_trip_ = now;
+                        power_trip_count_++;
+                        ESP_LOGD(TAG, "Completed power trip %d", power_trip_count_);
+                    }
                 }
             }
 
