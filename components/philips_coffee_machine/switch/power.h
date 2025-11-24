@@ -157,6 +157,8 @@ namespace esphome
                 bool cleaning_pending_ = true;
                 /// @brief Tracks if currently injecting power commands (blocks display messages)
                 bool injecting_commands_ = false;
+                /// @brief Timestamp when we should send pending power-on commands (after display boots)
+                uint32_t send_commands_at_ = 0;
                 /// @brief initial power state reference
                 bool *initial_state_;
             };

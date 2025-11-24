@@ -57,6 +57,7 @@ philips_coffee_machine:
   power_pin: GPIO8
   power_trip_delay: 3000ms  # Can be adjusted via UI number entity below
   invert_power_pin: true     # Can be toggled via UI switch entity below
+  display_boot_delay: 5000ms  # Initial value, adjustable via UI
   id: philip
 
 text_sensor:

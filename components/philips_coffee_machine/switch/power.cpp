@@ -61,21 +61,28 @@ namespace esphome
                         last_power_trip_ = now;
                         power_trip_count_++;
                         
-                        // If this was the first power trip and we have pending commands, send them now
+                        // If this was the first power trip and we have pending commands, schedule them
                         if (power_trip_count_ == 1 && pending_power_on_commands_)
                         {
-                            // Wait for display to fully boot before sending commands
+                            // Schedule command sending after display boot delay
                             // Display takes approximately 8-9 seconds to boot and start communicating
-                            ESP_LOGD(TAG, "Waiting %d ms for display to boot...", display_boot_delay_);
-                            delay(display_boot_delay_);
-                            
-                            ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
-                            
-                            // Block display messages while we inject our commands
-                            injecting_commands_ = true;
-                            
-                            // Send commands multiple times with delays to catch the display as it boots
-                            for (int attempt = 0; attempt < 3; attempt++)
+                            send_commands_at_ = millis() + display_boot_delay_;
+                            ESP_LOGD(TAG, "Scheduled power-on commands to be sent in %d ms (at millis=%u)", 
+                                     display_boot_delay_, send_commands_at_);
+                        }
+                    }
+                }
+                
+                // Check if it's time to send pending power-on commands
+                if (pending_power_on_commands_ && send_commands_at_ > 0 && millis() >= send_commands_at_)
+                {
+                    ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
+                    
+                    // Block display messages while we inject our commands
+                    injecting_commands_ = true;
+                    
+                    // Send commands multiple times with delays to catch the display as it boots
+                    for (int attempt = 0; attempt < 3; attempt++)
                             {
                                 ESP_LOGD(TAG, "Command attempt %d - sending %d pre-power + power messages", 
                                          attempt + 1, power_message_repetitions_ + 1);
@@ -105,20 +112,20 @@ namespace esphome
                                 if (attempt < 2)
                                     delay(300);  // Wait between attempts
                             }
-                            
-                            pending_power_on_commands_ = false;
-                            
-                            // Keep blocking display messages for a bit longer
-                            // to ensure our commands reach the mainboard
-                            delay(500);
-                            injecting_commands_ = false;
-                            
-                            ESP_LOGD(TAG, "Power-on commands sent (3 attempts)");
-                            
-                            // Stop power tripping - we've done our job
-                            should_power_trip_ = false;
-                            ESP_LOGD(TAG, "Power trip sequence complete");
-                        }
+                        
+                        pending_power_on_commands_ = false;
+                        send_commands_at_ = 0;  // Clear scheduled time
+                        
+                        // Keep blocking display messages for a bit longer
+                        // to ensure our commands reach the mainboard
+                        delay(500);
+                        injecting_commands_ = false;
+                        
+                        ESP_LOGD(TAG, "Power-on commands sent (3 attempts)");
+                        
+                        // Stop power tripping - we've done our job
+                        should_power_trip_ = false;
+                        ESP_LOGD(TAG, "Power trip sequence complete");
                     }
                 }
             }
