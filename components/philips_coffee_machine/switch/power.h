@@ -121,6 +121,10 @@ namespace esphome
                 uint power_message_repetitions_ = 5;
                 /// @brief End time of grace period after power-on (prevents premature OFF detection)
                 uint32_t power_on_grace_period_end_ = 0;
+                /// @brief Indicates if power-on commands are pending after power trip
+                bool pending_power_on_commands_ = false;
+                /// @brief Stores cleaning preference for pending power-on
+                bool cleaning_pending_ = true;
                 /// @brief initial power state reference
                 bool *initial_state_;
             };

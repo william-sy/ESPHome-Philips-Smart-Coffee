@@ -46,6 +46,38 @@ namespace esphome
                         last_power_trip_ = now;
                         power_trip_count_++;
                         ESP_LOGD(TAG, "Completed power trip %d", power_trip_count_);
+                        
+                        // If this was the first power trip and we have pending commands, send them now
+                        if (power_trip_count_ == 1 && pending_power_on_commands_)
+                        {
+                            // Wait a moment for display to start booting
+                            delay(500);
+                            
+                            ESP_LOGD(TAG, "Sending power-on commands after display boot");
+                            
+                            // Send pre-power on message
+                            for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                mainboard_uart_->write_array(command_pre_power_on);
+
+                            // Send power on message
+                            if (cleaning_pending_)
+                            {
+                                // Send power on command with cleaning
+                                for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                    mainboard_uart_->write_array(command_power_with_cleaning);
+                            }
+                            else
+                            {
+                                // Send power on command without cleaning
+                                for (unsigned int i = 0; i <= power_message_repetitions_; i++)
+                                    mainboard_uart_->write_array(command_power_without_cleaning);
+                            }
+
+                            mainboard_uart_->flush();
+                            pending_power_on_commands_ = false;
+                            
+                            ESP_LOGD(TAG, "Power-on commands sent");
+                        }
                     }
                 }
             }
@@ -54,40 +86,21 @@ namespace esphome
             {
                 if (state)
                 {
-                    // Send pre-power on message
-                    for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                        mainboard_uart_->write_array(command_pre_power_on);
-
-                    // Send power on message
-                    if (cleaning_)
-                    {
-                        // Send power on command with cleaning
-                        for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                            mainboard_uart_->write_array(command_power_with_cleaning);
-                    }
-                    else
-                    {
-                        // Send power on command without cleaning
-                        for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                            mainboard_uart_->write_array(command_power_without_cleaning);
-                    }
-
-                    mainboard_uart_->flush();
-
-                    // Delay before power trip to ensure mainboard receives messages
-                    // This is necessary because the mainboard needs time to process
-                    // the power-on command before we cycle the display power
-                    delay(100);
+                    ESP_LOGD(TAG, "Power ON requested - will power trip first, then send commands");
                     
-                    // Perform power trip in component loop
+                    // First, perform power trip to wake up display
+                    // The display needs to be communicating for commands to work properly
                     should_power_trip_ = true;
                     power_trip_count_ = 0;
                     last_power_trip_ = 0; // Trigger immediately
                     
+                    // Mark that we need to send power-on commands after power trip
+                    pending_power_on_commands_ = true;
+                    cleaning_pending_ = cleaning_;
+                    
                     // Set grace period to prevent immediate OFF detection
                     // Display needs time to boot after power trip
                     power_on_grace_period_end_ = millis() + POWER_ON_GRACE_PERIOD;
-                    ESP_LOGD(TAG, "Power ON requested, messages sent, ready for power trip");
                 }
                 else
                 {
