@@ -70,6 +70,9 @@ namespace esphome
                             
                             ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
                             
+                            // Block display messages while we inject our commands
+                            injecting_commands_ = true;
+                            
                             // Send commands multiple times with delays to catch the display as it boots
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
@@ -104,6 +107,11 @@ namespace esphome
                             
                             pending_power_on_commands_ = false;
                             
+                            // Keep blocking display messages for a bit longer
+                            // to ensure our commands reach the mainboard
+                            delay(500);
+                            injecting_commands_ = false;
+                            
                             ESP_LOGD(TAG, "Power-on commands sent (3 attempts)");
                             
                             // Stop power tripping - we've done our job
@@ -123,6 +131,9 @@ namespace esphome
                     {
                         ESP_LOGD(TAG, "Power ON requested but display already communicating - just sending commands");
                         
+                        // Block display messages while injecting our commands
+                        injecting_commands_ = true;
+                        
                         // Send pre-power on message
                         for (unsigned int i = 0; i <= power_message_repetitions_; i++)
                             mainboard_uart_->write_array(command_pre_power_on);
@@ -141,6 +152,10 @@ namespace esphome
                                 mainboard_uart_->write_array(command_power_without_cleaning);
                         }
                         mainboard_uart_->flush();
+                        
+                        delay(500);  // Keep blocking display messages
+                        injecting_commands_ = false;
+                        
                         ESP_LOGD(TAG, "Power-on commands sent (no power trip needed)");
                         return;
                     }

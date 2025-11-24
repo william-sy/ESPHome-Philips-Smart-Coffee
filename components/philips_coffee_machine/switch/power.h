@@ -83,6 +83,15 @@ namespace esphome
                 }
 
                 /**
+                 * @brief Check if power switch is currently injecting commands
+                 * Used to block display messages during command injection
+                 */
+                bool is_injecting_commands() const
+                {
+                    return injecting_commands_;
+                }
+
+                /**
                  * @brief Sets the initial state reference on this power switch
                  *
                  * @param initial_state hub components initial state reference
@@ -136,6 +145,8 @@ namespace esphome
                 bool pending_power_on_commands_ = false;
                 /// @brief Stores cleaning preference for pending power-on
                 bool cleaning_pending_ = true;
+                /// @brief Tracks if currently injecting power commands (blocks display messages)
+                bool injecting_commands_ = false;
                 /// @brief initial power state reference
                 bool *initial_state_;
             };

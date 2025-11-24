@@ -42,8 +42,21 @@ namespace esphome
                 }
 #endif
 
-                // Drop messages if button long-press is currently injecting messages
-                if (!long_pressing)
+                // Check if power switch is injecting power-on commands
+                bool power_injecting = false;
+#ifdef USE_SWITCH
+                for (philips_power_switch::Power *power_switch : power_switches_)
+                {
+                    if (power_switch->is_injecting_commands())
+                    {
+                        power_injecting = true;
+                        break;
+                    }
+                }
+#endif
+
+                // Drop messages if button long-press or power switch is injecting messages
+                if (!long_pressing && !power_injecting)
                     mainboard_uart_.write_array(display_buffer, size);
                 last_message_from_display_time_ = millis();
             }
