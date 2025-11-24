@@ -64,7 +64,11 @@ namespace esphome
                         // If this was the first power trip and we have pending commands, send them now
                         if (power_trip_count_ == 1 && pending_power_on_commands_)
                         {
-                            ESP_LOGD(TAG, "Sending power-on commands immediately after power restore");
+                            // Wait for display to boot before sending commands
+                            ESP_LOGD(TAG, "Waiting 2 seconds for display to boot...");
+                            delay(2000);
+                            
+                            ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
                             
                             // Send commands multiple times with delays to catch the display as it boots
                             for (int attempt = 0; attempt < 3; attempt++)
@@ -83,13 +87,6 @@ namespace esphome
                                     ESP_LOGD(TAG, "Sending power-on WITH cleaning command");
                                     for (unsigned int i = 0; i <= power_message_repetitions_; i++)
                                         mainboard_uart_->write_array(command_power_with_cleaning);
-                                    
-                                    // CRITICAL: After cleaning command, also send power WITHOUT cleaning
-                                    // This keeps the machine on after the flush cycle completes
-                                    delay(100);  // Small delay between command types
-                                    ESP_LOGD(TAG, "Sending power-on WITHOUT cleaning to keep machine on after flush");
-                                    for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                                        mainboard_uart_->write_array(command_power_without_cleaning);
                                 }
                                 else
                                 {
@@ -133,16 +130,9 @@ namespace esphome
                         // Send power on message
                         if (cleaning_)
                         {
-                            ESP_LOGD(TAG, "Sending power-on WITH cleaning + WITHOUT cleaning sequence");
-                            // Send power WITH cleaning first (starts flush cycle)
+                            ESP_LOGD(TAG, "Sending power-on WITH cleaning");
                             for (unsigned int i = 0; i <= power_message_repetitions_; i++)
                                 mainboard_uart_->write_array(command_power_with_cleaning);
-                            
-                            delay(100);  // Small delay between command types
-                            
-                            // Then send power WITHOUT cleaning to keep machine on after flush
-                            for (unsigned int i = 0; i <= power_message_repetitions_; i++)
-                                mainboard_uart_->write_array(command_power_without_cleaning);
                         }
                         else
                         {
