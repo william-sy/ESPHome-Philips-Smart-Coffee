@@ -69,7 +69,8 @@ namespace esphome
                             // Send commands multiple times with delays to catch the display as it boots
                             for (int attempt = 0; attempt < 3; attempt++)
                             {
-                                ESP_LOGD(TAG, "Command attempt %d", attempt + 1);
+                                ESP_LOGD(TAG, "Command attempt %d - sending %d pre-power + %d power messages", 
+                                         attempt + 1, power_message_repetitions_ + 1, power_message_repetitions_ + 1);
                                 
                                 // Send pre-power on message
                                 for (unsigned int i = 0; i <= power_message_repetitions_; i++)

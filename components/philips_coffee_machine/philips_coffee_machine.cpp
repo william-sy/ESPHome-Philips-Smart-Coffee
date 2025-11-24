@@ -29,6 +29,8 @@ namespace esphome
                 uint8_t size = std::min(display_uart_.available(), DISPLAY_BUFFER_SIZE);
                 display_uart_.read_array(display_buffer, size);
 
+                ESP_LOGD(TAG, "Display→Mainboard: %d bytes", size);
+
                 // Check if a action button is currently performing a long press
                 bool long_pressing = false;
 #ifdef USE_BUTTON
@@ -74,6 +76,8 @@ namespace esphome
 
                 if (size >= MAINBOARD_BUFFER_SIZE - 2)
                 {
+                    ESP_LOGD(TAG, "Mainboard→Display: %d bytes (valid message)", size + 2);
+                    
                     // Only process messages starting with start bytes
                     // Only process duplicate messages (crude checksum alternative)
                     // TODO: figure out how the checksum is calculated and only parse valid messages
