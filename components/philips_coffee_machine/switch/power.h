@@ -8,6 +8,7 @@
 #define MESSAGE_REPETITIONS 5
 #define POWER_TRIP_RETRY_DELAY 100
 #define MAX_POWER_TRIP_COUNT 5
+#define POWER_ON_GRACE_PERIOD 3000  // 3 seconds for display to boot after power trip
 
 namespace esphome
 {
@@ -118,6 +119,8 @@ namespace esphome
                 uint power_trip_count_ = 0;
                 /// @brief determines how often the power on message is repeated
                 uint power_message_repetitions_ = 5;
+                /// @brief End time of grace period after power-on (prevents premature OFF detection)
+                uint32_t power_on_grace_period_end_ = 0;
                 /// @brief initial power state reference
                 bool *initial_state_;
             };

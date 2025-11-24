@@ -77,6 +77,11 @@ namespace esphome
                     // Perform power trip in component loop
                     should_power_trip_ = true;
                     power_trip_count_ = 0;
+                    
+                    // Set grace period to prevent immediate OFF detection
+                    // Display needs time to boot after power trip
+                    power_on_grace_period_end_ = millis() + POWER_ON_GRACE_PERIOD;
+                    ESP_LOGD(TAG, "Power ON requested, starting grace period");
                 }
                 else
                 {
@@ -96,6 +101,14 @@ namespace esphome
 
             void Power::update_state(bool state)
             {
+                // During grace period after power-on, ignore OFF state
+                // Give the display time to boot and start communicating
+                if (!state && millis() < power_on_grace_period_end_)
+                {
+                    ESP_LOGV(TAG, "Ignoring OFF state during power-on grace period");
+                    return;
+                }
+                
                 if (this->state != state)
                 {
                     // Stop further power trips after successfully tripping
@@ -104,6 +117,7 @@ namespace esphome
                         ESP_LOGD(TAG, "Performed %i power trip(s).", power_trip_count_);
                         should_power_trip_ = false;
                         power_trip_count_ = 0;
+                        power_trip_active_ = false;
                     }
 
                     publish_state(state);
