@@ -50,9 +50,6 @@ def validate_enum(config):
 CONFIG_SCHEMA = cv.Any(
     number.number_schema(
         BeverageSettings,
-        min_value=1,
-        max_value=3,
-        step=1,
     ).extend(
         {
             cv.Required(CONTROLLER_ID): cv.use_id(PhilipsCoffeeMachine),
@@ -73,7 +70,12 @@ CONFIG_SCHEMA = cv.Any(
 async def to_code(config):
     parent = await cg.get_variable(config[CONTROLLER_ID])
     status_sensor = await cg.get_variable(config[STATUS_SENSOR_ID])
-    var = await number.new_number(config)
+    var = await number.new_number(
+        config,
+        min_value=1.0,
+        max_value=3.0,
+        step=1.0,
+    )
     await cg.register_component(var, config)
 
     cg.add(var.set_type(config[CONF_TYPE]))

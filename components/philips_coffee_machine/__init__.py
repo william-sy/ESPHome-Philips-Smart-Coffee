@@ -61,17 +61,17 @@ CONFIG_SCHEMA = cv.Schema(
 ).extend(cv.COMPONENT_SCHEMA)
 
 
-def to_code(config):
+async def to_code(config):
     # Use user-specified command set, default to EP_2200
     cg.add_define(COMMAND_SETS[config[CONF_COMMAND_SET]])
     cg.add_define(LANGUAGES[config[CONF_LANGUAGE]])
 
     var = cg.new_Pvariable(config[CONF_ID])
-    yield cg.register_component(var, config)
+    await cg.register_component(var, config)
 
-    display = yield cg.get_variable(config[DISPLAY_UART_ID])
-    mainboard = yield cg.get_variable(config[MAINBOARD_UART_ID])
-    pin = yield cg.gpio_pin_expression(config[POWER_PIN])
+    display = await cg.get_variable(config[DISPLAY_UART_ID])
+    mainboard = await cg.get_variable(config[MAINBOARD_UART_ID])
+    pin = await cg.gpio_pin_expression(config[POWER_PIN])
 
     cg.add(var.register_display_uart(display))
     cg.add(var.register_mainboard_uart(mainboard))
