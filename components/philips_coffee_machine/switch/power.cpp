@@ -38,8 +38,8 @@ namespace esphome
                             initial = !initial;
                         }
                         bool trip_value = !initial;
-                        ESP_LOGD(TAG, "Cutting power to display - setting GPIO%d from %d to %d (goal: cut power)", 
-                                 power_pin_->get_pin(), initial, trip_value);
+                        ESP_LOGD(TAG, "Cutting power to display - setting pin from %d to %d (goal: cut power)", 
+                                 initial, trip_value);
                         power_pin_->digital_write(trip_value);
                         power_trip_active_ = true;
                         power_trip_start_time_ = now;
@@ -53,8 +53,8 @@ namespace esphome
                         if (invert_power_pin_) {
                             restore_value = !restore_value;
                         }
-                        ESP_LOGD(TAG, "Restoring power to display - setting GPIO%d to %d (goal: restore power)", 
-                                 power_pin_->get_pin(), restore_value);
+                        ESP_LOGD(TAG, "Restoring power to display - setting pin to %d (goal: restore power)", 
+                                 restore_value);
                         power_pin_->digital_write(restore_value);
                         ESP_LOGD(TAG, "Completed power trip %d", power_trip_count_ + 1);
                         power_trip_active_ = false;
