@@ -188,14 +188,16 @@ namespace esphome
                     // Block display messages while injecting power-off command
                     injecting_commands_ = true;
                     
-                    // Send power off message
-                    ESP_LOGD(TAG, "Sending power-off command");
+                    // Send power off message multiple times to ensure it's received
+                    ESP_LOGD(TAG, "Sending power-off command (%d repetitions)", power_message_repetitions_ + 1);
                     for (unsigned int i = 0; i <= power_message_repetitions_; i++)
                         mainboard_uart_->write_array(command_power_off);
                     mainboard_uart_->flush();
                     
-                    // Keep blocking for a bit to ensure command reaches mainboard
-                    delay(500);
+                    // Keep blocking longer to ensure command reaches mainboard
+                    // Machine may take time to start shutdown/cleaning sequence
+                    ESP_LOGD(TAG, "Waiting 2s for machine to process power-off command");
+                    delay(2000);
                     injecting_commands_ = false;
                 }
 
