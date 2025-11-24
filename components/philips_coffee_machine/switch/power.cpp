@@ -31,21 +31,26 @@ namespace esphome
                         }
 
                         // Start power trip - cut power to display
-                        power_pin_->digital_write(!(*initial_state_));
+                        bool initial = *initial_state_;
+                        bool trip_value = !initial;
+                        ESP_LOGD(TAG, "Starting power trip %d - setting pin from %d to %d", 
+                                 power_trip_count_ + 1, initial, trip_value);
+                        power_pin_->digital_write(trip_value);
                         power_trip_active_ = true;
                         power_trip_start_time_ = now;
-                        ESP_LOGD(TAG, "Starting power trip %d", power_trip_count_ + 1);
                     }
                     
                     // Check if we need to restore power
                     if (power_trip_active_ && now - power_trip_start_time_ >= power_trip_delay_)
                     {
                         // Restore power to display
-                        power_pin_->digital_write(*initial_state_);
+                        bool restore_value = *initial_state_;
+                        ESP_LOGD(TAG, "Completed power trip %d - restoring pin to %d", 
+                                 power_trip_count_ + 1, restore_value);
+                        power_pin_->digital_write(restore_value);
                         power_trip_active_ = false;
                         last_power_trip_ = now;
                         power_trip_count_++;
-                        ESP_LOGD(TAG, "Completed power trip %d", power_trip_count_);
                         
                         // If this was the first power trip and we have pending commands, send them now
                         if (power_trip_count_ == 1 && pending_power_on_commands_)
