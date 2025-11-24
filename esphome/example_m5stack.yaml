@@ -70,6 +70,13 @@ switch:
     controller_id: philip
     name: "Power"
     icon: mdi:coffee-maker
+    clean: true  # Default: flush on power-on (machine's normal behavior)
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    name: "Power (No Cleaning)"
+    icon: mdi:coffee-maker-outline
+    clean: false  # Skip cleaning cycle for quick power-on
 
   # Power pin inversion control (toggle from UI)
   - platform: template
