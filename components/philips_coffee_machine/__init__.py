@@ -87,3 +87,4 @@ async def to_code(config):
     cg.add(var.set_power_message_repetitions(config[CONF_POWER_MESSAGE_REPETITIONS]))
     cg.add(var.set_invert_power_pin(config[INVERT_POWER_PIN]))
     cg.add(var.set_power_trip_delay(config[POWER_TRIP_DELAY]))
+    cg.add(var.set_display_boot_delay(config[DISPLAY_BOOT_DELAY]))
