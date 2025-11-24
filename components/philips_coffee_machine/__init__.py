@@ -12,6 +12,7 @@ POWER_PIN = "power_pin"
 CONTROLLER_ID = "controller_id"
 INVERT_POWER_PIN = "invert_power_pin"
 POWER_TRIP_DELAY = "power_trip_delay"
+DISPLAY_BOOT_DELAY = "display_boot_delay"
 CONF_POWER_MESSAGE_REPETITIONS = "power_message_repetitions"
 
 CONF_COMMAND_SET = "model"

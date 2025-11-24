@@ -145,3 +145,21 @@ number:
         - lambda: |-
             // Update the power trip delay in the controller
             id(philip).set_power_trip_delay((uint32_t)x);
+
+  # Display boot delay control (adjustable from UI)
+  - platform: template
+    name: "Display Boot Delay"
+    id: display_boot_delay_number
+    icon: mdi:timer-sand
+    unit_of_measurement: "ms"
+    min_value: 1000
+    max_value: 15000
+    step: 500
+    initial_value: 5000
+    optimistic: true
+    mode: box
+    on_value:
+      then:
+        - lambda: |-
+            // Update the display boot delay in the controller
+            id(philip).set_display_boot_delay((uint32_t)x);

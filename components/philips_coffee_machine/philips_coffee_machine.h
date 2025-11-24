@@ -80,6 +80,16 @@ namespace esphome
             }
 
             /**
+             * @brief Display boot delay before sending power-on commands
+             *
+             * @param time delay in ms
+             */
+            void set_display_boot_delay(uint32_t time)
+            {
+                display_boot_delay_ = time;
+            }
+
+            /**
              * @brief The number of message repetitions used while turning on the machine
              *
              * @param count numer of message to use
@@ -101,6 +111,7 @@ namespace esphome
                 power_switch->set_mainboard_uart(&mainboard_uart_);
                 power_switch->set_power_pin(power_pin_);
                 power_switch->set_power_trip_delay(power_trip_delay_);
+                power_switch->set_display_boot_delay(display_boot_delay_);
                 power_switch->set_invert_power_pin(invert_power_pin_);
                 power_switch->set_power_message_repetitions(power_message_repetitions_);
                 power_switch->set_initial_state(&initial_pin_state_);
@@ -173,6 +184,9 @@ namespace esphome
 
             /// @brief length of power outage applied to the display
             uint32_t power_trip_delay_ = 500;
+
+            /// @brief delay after power restore before sending commands (display boot time)
+            uint32_t display_boot_delay_ = 5000;
 
 #ifdef USE_SWITCH
             /// @brief power switch reference

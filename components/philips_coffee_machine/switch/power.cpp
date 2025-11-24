@@ -64,34 +64,12 @@ namespace esphome
                         // If this was the first power trip and we have pending commands, send them now
                         if (power_trip_count_ == 1 && pending_power_on_commands_)
                         {
-                            // Wait longer for display to boot and start communicating
-                            // Display typically takes 8-9 seconds to boot
-                            ESP_LOGD(TAG, "Waiting for display to boot and start communicating...");
+                            // Wait for display to fully boot before sending commands
+                            // Display takes approximately 8-9 seconds to boot and start communicating
+                            ESP_LOGD(TAG, "Waiting %d ms for display to boot...", display_boot_delay_);
+                            delay(display_boot_delay_);
                             
-                            // Wait up to 12 seconds for display to start sending messages
-                            uint32_t wait_start = millis();
-                            bool display_ready = false;
-                            while (millis() - wait_start < 12000)
-                            {
-                                // Check if we've seen a message from display recently
-                                if (this->state)
-                                {
-                                    ESP_LOGD(TAG, "Display is communicating after %d ms", millis() - wait_start);
-                                    display_ready = true;
-                                    break;
-                                }
-                                delay(100);  // Check every 100ms
-                            }
-                            
-                            if (!display_ready)
-                            {
-                                ESP_LOGW(TAG, "Display didn't start communicating after 12 seconds, sending commands anyway");
-                            }
-                            
-                            // Give display a bit more time to stabilize
-                            delay(500);
-                            
-                            ESP_LOGD(TAG, "Sending power-on commands after display ready");
+                            ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
                             
                             // Block display messages while we inject our commands
                             injecting_commands_ = true;

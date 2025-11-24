@@ -66,6 +66,14 @@ namespace esphome
                 }
 
                 /**
+                 * @brief Sets the display boot delay before sending power-on commands
+                 */
+                void set_display_boot_delay(uint32_t time)
+                {
+                    display_boot_delay_ = time;
+                }
+
+                /**
                  * @brief Sets whether the power pin logic should be inverted
                  */
                 void set_invert_power_pin(bool invert)
@@ -125,6 +133,8 @@ namespace esphome
                 bool cleaning_ = true;
                 /// @brief length of power outage applied to the display (can be overridden by YAML config)
                 uint32_t power_trip_delay_ = 750;
+                /// @brief delay after power restore before sending commands (display boot time)
+                uint32_t display_boot_delay_ = 5000;
                 /// @brief whether to invert the power pin logic
                 bool invert_power_pin_ = false;
                 /// @brief Determines wether a power trip should be performed
