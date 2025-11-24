@@ -12,9 +12,10 @@ StatusSensor = philips_status_sensor_ns.class_(
     "StatusSensor", text_sensor.TextSensor, cg.Component
 )
 
-CONFIG_SCHEMA = text_sensor.TEXT_SENSOR_SCHEMA.extend(
+CONFIG_SCHEMA = text_sensor.text_sensor_schema(
+    StatusSensor,
+).extend(
     {
-        cv.GenerateID(): cv.declare_id(StatusSensor),
         cv.Required(CONTROLLER_ID): cv.use_id(PhilipsCoffeeMachine),
     }
 ).extend(cv.COMPONENT_SCHEMA)
@@ -22,8 +23,7 @@ CONFIG_SCHEMA = text_sensor.TEXT_SENSOR_SCHEMA.extend(
 
 async def to_code(config):
     parent = await cg.get_variable(config[CONTROLLER_ID])
-    var = cg.new_Pvariable(config[CONF_ID])
+    var = await text_sensor.new_text_sensor(config)
     await cg.register_component(var, config)
-    await text_sensor.register_text_sensor(var, config)
 
     cg.add(parent.add_status_sensor(var))
