@@ -8,7 +8,7 @@
 #define MESSAGE_REPETITIONS 5
 #define POWER_TRIP_RETRY_DELAY 100
 #define MAX_POWER_TRIP_COUNT 5
-#define POWER_ON_GRACE_PERIOD 5000  // 5 seconds for display to boot after power trip
+#define POWER_ON_GRACE_PERIOD 10000  // 10 seconds for display to boot after power trip
 #define DISPLAY_POWER_CUT_DURATION 2000  // 2 seconds power cut to ensure full shutdown
 
 namespace esphome
