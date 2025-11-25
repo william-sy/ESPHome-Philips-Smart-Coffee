@@ -262,18 +262,11 @@ namespace esphome
                         
                         if (has_valid_status)
                         {
-                            ESP_LOGD(TAG, "Machine ON confirmed by status sensor (%s), ending grace period early", 
-                                     status_sensor_->state.c_str());
+                            ESP_LOGD(TAG, "Machine ON confirmed - ending grace period early");
                             power_on_grace_period_end_ = 0;
-                        }
-                        else
-                        {
-                            ESP_LOGD(TAG, "Display communicating but no valid machine status yet - keeping grace period");
                         }
                     }
 
-                    ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
-                             state ? "ON" : "OFF", power_on_grace_period_end_, now);
                     publish_state(state);
                     
                     // If transitioning to OFF after grace period, clear any power trip state

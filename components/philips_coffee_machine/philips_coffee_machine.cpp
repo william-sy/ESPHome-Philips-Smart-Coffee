@@ -29,20 +29,11 @@ namespace esphome
             uint8_t display_buffer[DISPLAY_BUFFER_SIZE];
             uint8_t mainboard_buffer[MAINBOARD_BUFFER_SIZE];
             
-            static uint32_t last_display_log = 0;
-            static bool display_ever_active = false;
-
             // Pipe display to mainboard
             if (display_uart_.available())
             {
-                if (!display_ever_active) {
-                    ESP_LOGI(TAG, "Display UART is now active - receiving data");
-                    display_ever_active = true;
-                }
-                
                 uint8_t size = std::min(display_uart_.available(), DISPLAY_BUFFER_SIZE);
                 display_uart_.read_array(display_buffer, size);
-                ESP_LOGD(TAG, "Display UART received %d bytes", size);
 
                 // Check if a action button is currently performing a long press
                 bool long_pressing = false;
@@ -70,34 +61,18 @@ namespace esphome
                 }
 #endif
 
-                // Log the message we received
-                ESP_LOGD(TAG, "Display message: [0x%02X 0x%02X 0x%02X ...] size=%d", 
-                         size >= 1 ? display_buffer[0] : 0,
-                         size >= 2 ? display_buffer[1] : 0,
-                         size >= 3 ? display_buffer[2] : 0,
-                         size);
-
                 // Block messages during automated sequences
                 // When doing automated power-on via GUI/phone, we block ALL display messages
                 // to ensure our commands reach the mainboard without interference
-                // Physical button won't work during this short period, but that's OK since
-                // user initiated automation via phone/GUI, not physical button
                 bool should_block = false;
                 if (long_pressing || power_injecting)
                 {
                     should_block = true;  // Block all messages during automation
-                    ESP_LOGW(TAG, "BLOCKING display message - long_pressing: %d, power_injecting: %d", 
-                             long_pressing, power_injecting);
                 }
 
                 if (!should_block)
                 {
-                    ESP_LOGD(TAG, "Forwarding message to mainboard");
                     mainboard_uart_.write_array(display_buffer, size);
-                }
-                else
-                {
-                    ESP_LOGW(TAG, "Message BLOCKED - NOT forwarded to mainboard");
                 }
                 last_message_from_display_time_ = millis();
             }
