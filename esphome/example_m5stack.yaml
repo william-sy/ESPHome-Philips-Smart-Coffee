@@ -1,27 +1,17 @@
 esphome:
   name: ph-ep2235-coffee
   friendly_name: PH-EP2235-COFFEE
-  # Perform automatic power trip after boot to wake display
+  # Automatically power on machine after ESP boot
+  # This wakes the display and powers on the machine
+  # Physical buttons will work after this sequence completes
   on_boot:
     priority: -100  # Run after everything else is set up
     then:
-      - logger.log: "Boot complete - waiting 2s before automatic power trip"
-      - delay: 2s
-      - logger.log: "=== AUTO BOOT POWER TRIP: Starting ==="
-      - lambda: |-
-          auto philip_ptr = id(philip);
-          bool current_state = philip_ptr->get_initial_pin_state();
-          bool trip_value = !current_state;
-          ESP_LOGI("boot_power_trip", "Cutting power to wake display - GPIO8 = %d", trip_value);
-          philip_ptr->get_power_pin()->digital_write(trip_value);
-      - delay: 3s
-      - lambda: |-
-          auto philip_ptr = id(philip);
-          bool restore_value = philip_ptr->get_initial_pin_state();
-          ESP_LOGI("boot_power_trip", "Restoring power - GPIO8 = %d", restore_value);
-          philip_ptr->get_power_pin()->digital_write(restore_value);
-      - delay: 2s
-      - logger.log: "=== AUTO BOOT POWER TRIP: Complete - display should be active ==="
+      - logger.log: "Boot complete - waiting 5s for network to stabilize"
+      - delay: 5s
+      - logger.log: "=== AUTO BOOT: Triggering power-on sequence ==="
+      - switch.turn_on: power_switch
+      - logger.log: "=== AUTO BOOT: Power-on triggered - machine should wake up ==="
 
 esp32:
   board: m5stack-atoms3
@@ -90,6 +80,7 @@ text_sensor:
 switch:
   - platform: philips_coffee_machine
     controller_id: philip
+    id: power_switch
     name: "Power"
     icon: mdi:coffee-maker
     clean: true  # Default: flush on power-on (machine's normal behavior)
