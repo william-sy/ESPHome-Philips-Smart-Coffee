@@ -122,6 +122,7 @@ number:
     controller_id: philip
     status_sensor_id: status
     source: COFFEE
+    restore_value: true
 
   - platform: philips_coffee_machine
     type: size
@@ -129,6 +130,7 @@ number:
     controller_id: philip
     status_sensor_id: status
     source: COFFEE
+    restore_value: true
 
   # Power trip delay control (adjustable from UI)
   - platform: template
