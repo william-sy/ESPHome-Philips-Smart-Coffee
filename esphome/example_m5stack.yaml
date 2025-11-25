@@ -169,6 +169,36 @@ button:
     icon: mdi:play-pause
     entity_category: config
 
+  # Manual power trip button for testing (in config section)
+  - platform: template
+    name: "Manual Power Trip"
+    icon: mdi:power-cycle
+    entity_category: config
+    on_press:
+      then:
+        - logger.log: "=== MANUAL POWER TRIP: Starting ==="
+        - lambda: |-
+            // Get current pin state
+            auto philip_ptr = id(philip);
+            bool current_state = philip_ptr->get_initial_pin_state();
+            bool invert = philip_ptr->get_invert_power_pin();
+            
+            ESP_LOGI("manual_power_trip", "Current state: %d, Invert: %d", current_state, invert);
+            
+            // Calculate trip value (opposite of current)
+            bool trip_value = !current_state;
+            ESP_LOGI("manual_power_trip", "Cutting power - GPIO8 = %d", trip_value);
+            philip_ptr->get_power_pin()->digital_write(trip_value);
+        - delay: 3000ms  # Power trip duration
+        - lambda: |-
+            auto philip_ptr = id(philip);
+            bool restore_value = philip_ptr->get_initial_pin_state();
+            ESP_LOGI("manual_power_trip", "Restoring power - GPIO8 = %d", restore_value);
+            philip_ptr->get_power_pin()->digital_write(restore_value);
+        - logger.log: "=== MANUAL POWER TRIP: Complete - waiting for display to boot ==="
+        - delay: 2000ms
+        - logger.log: "=== MANUAL POWER TRIP: Display should now be active ==="
+
 number:
   - platform: philips_coffee_machine
     id: coffee_beans

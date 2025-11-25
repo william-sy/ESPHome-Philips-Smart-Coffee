@@ -99,6 +99,21 @@ namespace esphome
                 power_message_repetitions_ = count;
             }
 
+            /**
+             * @brief Get the power pin for manual control (testing)
+             */
+            GPIOPin* get_power_pin() { return power_pin_; }
+
+            /**
+             * @brief Get the initial pin state for manual control (testing)
+             */
+            bool get_initial_pin_state() { return initial_pin_state_; }
+
+            /**
+             * @brief Get the invert power pin setting for manual control (testing)
+             */
+            bool get_invert_power_pin() { return invert_power_pin_; }
+
 #ifdef USE_SWITCH
             /**
              * @brief Reference to a power switch object.
