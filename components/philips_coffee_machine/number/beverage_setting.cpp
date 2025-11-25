@@ -20,6 +20,15 @@ namespace esphome
                     {
                         restored_value_ = restored;
                         ESP_LOGI(TAG, "Restored value: %.0f", restored_value_);
+                        // Publish the restored value immediately so GUI shows it
+                        this->publish_state(restored_value_);
+                    }
+                    else
+                    {
+                        // No saved value - publish a default value (middle of range)
+                        float default_value = (this->traits.get_min_value() + this->traits.get_max_value()) / 2.0f;
+                        ESP_LOGI(TAG, "No saved value - using default: %.0f", default_value);
+                        this->publish_state(default_value);
                     }
                 }
             }

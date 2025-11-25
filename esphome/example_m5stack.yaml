@@ -1,24 +1,31 @@
 esphome:
   name: ph-ep2235-coffee
   friendly_name: PH-EP2235-COFFEE
-  # Automatically power on machine after ESP boot
-  # This wakes the display and powers on the machine
-  # Physical buttons will work after this sequence completes
+  # Automatically wake display after ESP boot
+  # Smart logic: If machine is OFF, just wake display. If machine is ON, do full re-init.
   on_boot:
     priority: -100  # Run after everything else is set up
     then:
-      - logger.log: "Boot complete - waiting 10s for all components to be ready"
+      - logger.log: "Boot complete - waiting 10s for components to be ready"
       - delay: 10s
-      - logger.log: "=== AUTO BOOT: Checking power switch state ==="
+      - logger.log: "=== AUTO BOOT: Checking machine status ==="
       - lambda: |-
-          auto sw = id(power_switch);
-          ESP_LOGI("boot", "Power switch state: %d", sw->state);
-          ESP_LOGI("boot", "Now triggering power-on...");
-      - logger.log: "=== AUTO BOOT: Triggering power-on sequence ==="
-      - switch.turn_on: power_switch
-      - logger.log: "=== AUTO BOOT: Power-on command sent ==="
-      - delay: 20s
-      - logger.log: "=== AUTO BOOT: Complete - machine should be ON, physical buttons should work ==="
+          auto status_state = id(status).state;
+          ESP_LOGI("auto_boot", "Current status: %s", status_state.c_str());
+          
+          // Check if machine is actually ON (not Off/Unknown)
+          bool machine_is_on = (status_state != "Off" && status_state != "Unknown" && !status_state.empty());
+          
+          if (machine_is_on) {
+            ESP_LOGW("auto_boot", "⚠️ Machine was ON during ESP reboot - doing FULL power trip + commands");
+            // Machine is running, need full re-initialization
+            id(power_switch).turn_on();
+          } else {
+            ESP_LOGI("auto_boot", "Machine is OFF - doing simple power trip to wake display");
+            // Machine is off, just wake the display
+            id(manual_power_trip_button).press();
+          }
+      - logger.log: "=== AUTO BOOT: Complete ==="
 
 esp32:
   board: m5stack-atoms3
@@ -190,6 +197,7 @@ button:
 
   # Manual power trip button for testing (in config section)
   - platform: template
+    id: manual_power_trip_button
     name: "Manual Power Trip"
     icon: mdi:power-cycle
     entity_category: config
