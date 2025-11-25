@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import number
-from esphome.const import CONF_MODE, CONF_TYPE
+from esphome.const import CONF_MODE, CONF_TYPE, CONF_RESTORE_VALUE
 
 from .. import CONTROLLER_ID, PhilipsCoffeeMachine, philips_coffee_machine_ns
 from ..text_sensor import STATUS_SENSOR_ID, StatusSensor
@@ -61,6 +61,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_SOURCE, default="ANY"): cv.enum(
                 SOURCES, upper=True, space="_"
             ),
+            cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_enum,
