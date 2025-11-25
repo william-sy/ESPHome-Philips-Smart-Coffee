@@ -7,11 +7,18 @@ esphome:
   on_boot:
     priority: -100  # Run after everything else is set up
     then:
-      - logger.log: "Boot complete - waiting 5s for network to stabilize"
-      - delay: 5s
+      - logger.log: "Boot complete - waiting 10s for all components to be ready"
+      - delay: 10s
+      - logger.log: "=== AUTO BOOT: Checking power switch state ==="
+      - lambda: |-
+          auto sw = id(power_switch);
+          ESP_LOGI("boot", "Power switch state: %d", sw->state);
+          ESP_LOGI("boot", "Now triggering power-on...");
       - logger.log: "=== AUTO BOOT: Triggering power-on sequence ==="
       - switch.turn_on: power_switch
-      - logger.log: "=== AUTO BOOT: Power-on triggered - machine should wake up ==="
+      - logger.log: "=== AUTO BOOT: Power-on command sent ==="
+      - delay: 20s
+      - logger.log: "=== AUTO BOOT: Complete - machine should be ON, physical buttons should work ==="
 
 esp32:
   board: m5stack-atoms3
