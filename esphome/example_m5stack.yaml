@@ -1,30 +1,24 @@
 esphome:
   name: ph-ep2235-coffee
   friendly_name: PH-EP2235-COFFEE
-  # Automatically wake display after ESP boot
-  # This does a power trip to wake the display without powering on the machine
+  # Automatically power on machine after ESP boot
+  # This wakes the display and powers on the machine
   # Physical buttons will work after this sequence completes
   on_boot:
     priority: -100  # Run after everything else is set up
     then:
-      - logger.log: "Boot complete - waiting 10s for components to be ready"
+      - logger.log: "Boot complete - waiting 10s for all components to be ready"
       - delay: 10s
-      - logger.log: "=== AUTO BOOT: Performing power trip to wake display ==="
+      - logger.log: "=== AUTO BOOT: Checking power switch state ==="
       - lambda: |-
-          // Just do a power trip to wake display, don't send power-on commands
-          auto philip_ptr = id(philip);
-          bool current_state = philip_ptr->get_initial_pin_state();
-          bool trip_value = !current_state;
-          ESP_LOGI("boot", "Power trip: GPIO8 %d -> %d", current_state, trip_value);
-          philip_ptr->get_power_pin()->digital_write(trip_value);
-      - delay: 3s
-      - lambda: |-
-          auto philip_ptr = id(philip);
-          bool restore_value = philip_ptr->get_initial_pin_state();
-          ESP_LOGI("boot", "Restoring: GPIO8 -> %d", restore_value);
-          philip_ptr->get_power_pin()->digital_write(restore_value);
-      - delay: 2s
-      - logger.log: "=== AUTO BOOT: Display awake - physical buttons should work ==="
+          auto sw = id(power_switch);
+          ESP_LOGI("boot", "Power switch state: %d", sw->state);
+          ESP_LOGI("boot", "Now triggering power-on...");
+      - logger.log: "=== AUTO BOOT: Triggering power-on sequence ==="
+      - switch.turn_on: power_switch
+      - logger.log: "=== AUTO BOOT: Power-on command sent ==="
+      - delay: 20s
+      - logger.log: "=== AUTO BOOT: Complete - machine should be ON, physical buttons should work ==="
 
 esp32:
   board: m5stack-atoms3
