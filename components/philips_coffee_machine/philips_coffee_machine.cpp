@@ -64,6 +64,8 @@ namespace esphome
                 if (long_pressing || power_injecting)
                 {
                     should_block = true;  // Block all messages during automation
+                    ESP_LOGD(TAG, "Blocking display message - long_pressing: %d, power_injecting: %d", 
+                             long_pressing, power_injecting);
                 }
 
                 if (!should_block)
