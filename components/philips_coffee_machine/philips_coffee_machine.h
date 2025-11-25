@@ -114,6 +114,16 @@ namespace esphome
              */
             bool get_invert_power_pin() { return invert_power_pin_; }
 
+            /**
+             * @brief Set pending power off flag (for boot sequence)
+             */
+            void set_pending_power_off(bool pending) { pending_power_off_ = pending; }
+
+            /**
+             * @brief Get pending power off flag (for boot sequence)
+             */
+            bool get_pending_power_off() { return pending_power_off_; }
+
 #ifdef USE_SWITCH
             /**
              * @brief Reference to a power switch object.
@@ -206,6 +216,9 @@ namespace esphome
 
             /// @brief delay after power restore before sending commands (display boot time)
             uint32_t display_boot_delay_ = 5000;
+
+            /// @brief flag to indicate machine should be powered off after boot sequence
+            bool pending_power_off_ = false;
 
 #ifdef USE_SWITCH
             /// @brief power switch reference

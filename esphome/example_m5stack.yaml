@@ -2,7 +2,8 @@ esphome:
   name: ph-ep2235-coffee
   friendly_name: PH-EP2235-COFFEE
   # Automatically wake display after ESP boot
-  # Smart logic: If machine is OFF, just wake display. If machine is ON, do full re-init.
+  # Strategy: Always power ON (wakes display), then turn OFF if it was off before
+  # This ensures display communication is properly initialized
   on_boot:
     priority: -100  # Run after everything else is set up
     then:
@@ -14,16 +15,28 @@ esphome:
           ESP_LOGI("auto_boot", "Current status: %s", status_state.c_str());
           
           // Check if machine is actually ON (not Off/Unknown)
-          bool machine_is_on = (status_state != "Off" && status_state != "Unknown" && !status_state.empty());
+          bool machine_was_on = (status_state != "Off" && status_state != "Unknown" && !status_state.empty());
           
-          if (machine_is_on) {
-            ESP_LOGW("auto_boot", "⚠️ Machine was ON during ESP reboot - doing FULL power trip + commands");
-            // Machine is running, need full re-initialization
-            id(power_switch).turn_on();
+          if (machine_was_on) {
+            ESP_LOGW("auto_boot", "⚠️ Machine was ON during ESP reboot - doing power ON to re-init display");
           } else {
-            ESP_LOGI("auto_boot", "Machine is OFF - doing simple power trip to wake display");
-            // Machine is off, just wake the display
-            id(manual_power_trip_button).press();
+            ESP_LOGI("auto_boot", "Machine was OFF - will power ON then back OFF to wake display");
+          }
+          
+          // Always power on to properly wake and initialize display
+          // Store whether we need to turn back off
+          id(philip).set_pending_power_off(!machine_was_on);
+      - switch.turn_on: power_switch
+      - logger.log: "=== AUTO BOOT: Power-on command sent ==="
+      - delay: 20s  # Wait for cleaning cycle to complete
+      - lambda: |-
+          // If machine was off before, turn it back off now
+          if (id(philip).get_pending_power_off()) {
+            ESP_LOGI("auto_boot", "Machine was OFF before reboot - turning back OFF now");
+            id(power_switch).turn_off();
+            id(philip).set_pending_power_off(false);
+          } else {
+            ESP_LOGI("auto_boot", "Machine stays ON (was already running before reboot)");
           }
       - logger.log: "=== AUTO BOOT: Complete ==="
 
