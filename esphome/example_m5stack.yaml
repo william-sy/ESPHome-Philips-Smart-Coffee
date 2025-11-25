@@ -136,7 +136,7 @@ switch:
           id(philip).set_invert_power_pin(false);
 
 button:
-  # Main drink buttons (visible in default view)
+  # Direct make buttons (instant brewing, no customization)
   - platform: philips_coffee_machine
     controller_id: philip
     action: MAKE_COFFEE
@@ -161,29 +161,59 @@ button:
     name: "Make Cappuccino"
     icon: mdi:coffee-maker
 
+  # Select buttons for 1 cup (choose drink, customize, then press Play/Pause to start)
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_COFFEE
-    name: "Coffee (2 cups)"
+    id: select_coffee_button
+    name: "Select Coffee (1 cup)"
     icon: mdi:coffee-outline
 
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_ESPRESSO
-    name: "Espresso (2 cups)"
+    id: select_espresso_button
+    name: "Select Espresso (1 cup)"
     icon: mdi:coffee-to-go-outline
 
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_HOT_WATER
-    name: "Hot Water (Select)"
+    id: select_hot_water_button
+    name: "Select Hot Water"
     icon: mdi:tea-outline
 
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_CAPPUCCINO
-    name: "Cappuccino (2 cups)"
+    id: select_cappuccino_button
+    name: "Select Cappuccino (1 cup)"
     icon: mdi:coffee-maker-outline
+
+  # Select buttons for 2 cups (press drink button twice, customize, then Play/Pause)
+  - platform: template
+    name: "Select Coffee (2 cups)"
+    icon: mdi:coffee-outline
+    on_press:
+      - button.press: select_coffee_button
+      - delay: 150ms
+      - button.press: select_coffee_button
+
+  - platform: template
+    name: "Select Espresso (2 cups)"
+    icon: mdi:coffee-to-go-outline
+    on_press:
+      - button.press: select_espresso_button
+      - delay: 150ms
+      - button.press: select_espresso_button
+
+  - platform: template
+    name: "Select Cappuccino (2 cups)"
+    icon: mdi:coffee-maker-outline
+    on_press:
+      - button.press: select_cappuccino_button
+      - delay: 150ms
+      - button.press: select_cappuccino_button
 
   # Maintenance buttons (in config section)
   - platform: philips_coffee_machine
