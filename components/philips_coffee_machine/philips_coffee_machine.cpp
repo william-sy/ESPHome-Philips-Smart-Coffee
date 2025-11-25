@@ -55,8 +55,27 @@ namespace esphome
                 }
 #endif
 
-                // Drop messages if button long-press or power switch is injecting messages
-                if (!long_pressing && !power_injecting)
+                // When power is injecting, only block status request messages (0xD5 0x55 0x0A...)
+                // Allow power button presses and other user actions to pass through
+                bool should_block = false;
+                if (long_pressing)
+                {
+                    should_block = true;  // Block all during long press
+                }
+                else if (power_injecting && size >= 3)
+                {
+                    // Only block status request messages during power injection
+                    // Status requests: 0xD5 0x55 0x0A...
+                    // Power commands: 0xD5 0x55 0x00/0x01/0x02...
+                    if (display_buffer[0] == message_header[0] && 
+                        display_buffer[1] == message_header[1] && 
+                        display_buffer[2] == 0x0A)
+                    {
+                        should_block = true;  // Block status requests
+                    }
+                }
+
+                if (!should_block)
                     mainboard_uart_.write_array(display_buffer, size);
                 last_message_from_display_time_ = millis();
             }
