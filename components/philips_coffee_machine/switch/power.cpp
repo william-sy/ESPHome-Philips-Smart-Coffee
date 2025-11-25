@@ -85,14 +85,14 @@ namespace esphome
                 {
                     ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
                     
-                    // Block display messages while we inject our commands
-                    injecting_commands_ = true;
-                    
                     // Send commands multiple times with delays to catch the display as it boots
                     for (int attempt = 0; attempt < 3; attempt++)
                     {
                         ESP_LOGD(TAG, "Command attempt %d - sending %d pre-power + power messages", 
                                  attempt + 1, power_message_repetitions_ + 1);
+                        
+                        // Block display messages ONLY while actually sending
+                        injecting_commands_ = true;
                         
                         // Send pre-power on message
                         for (unsigned int i = 0; i <= power_message_repetitions_; i++)
@@ -116,17 +116,15 @@ namespace esphome
 
                         mainboard_uart_->flush();
                         
+                        // Stop blocking immediately after sending - allow physical button to work
+                        injecting_commands_ = false;
+                        
                         if (attempt < 2)
-                            delay(300);  // Wait between attempts
+                            delay(300);  // Wait between attempts (without blocking messages)
                     }
                     
                     pending_power_on_commands_ = false;
                     send_commands_at_ = 0;  // Clear scheduled time
-                    
-                    // Keep blocking display messages for a bit longer
-                    // to ensure our commands reach the mainboard
-                    delay(500);
-                    injecting_commands_ = false;
                     
                     ESP_LOGD(TAG, "Power-on commands sent (3 attempts)");
                     
@@ -145,7 +143,7 @@ namespace esphome
                     {
                         ESP_LOGD(TAG, "Power ON requested but display already communicating - just sending commands");
                         
-                        // Block display messages while injecting our commands
+                        // Block display messages ONLY while injecting our commands
                         injecting_commands_ = true;
                         
                         // Send pre-power on message
@@ -167,7 +165,7 @@ namespace esphome
                         }
                         mainboard_uart_->flush();
                         
-                        delay(500);  // Keep blocking display messages
+                        // Stop blocking immediately - allow physical button to work
                         injecting_commands_ = false;
                         
                         ESP_LOGD(TAG, "Power-on commands sent (no power trip needed)");
@@ -193,7 +191,7 @@ namespace esphome
                 }
                 else
                 {
-                    // Block display messages while injecting power-off command
+                    // Block display messages ONLY while injecting power-off command
                     injecting_commands_ = true;
                     
                     // Send power off message multiple times to ensure it's received
@@ -202,11 +200,12 @@ namespace esphome
                         mainboard_uart_->write_array(command_power_off);
                     mainboard_uart_->flush();
                     
-                    // Keep blocking longer to ensure command reaches mainboard
-                    // Machine may take time to start shutdown/cleaning sequence
+                    // Stop blocking immediately
+                    injecting_commands_ = false;
+                    
+                    // Wait for machine to process power-off (without blocking physical button)
                     ESP_LOGD(TAG, "Waiting 2s for machine to process power-off command");
                     delay(2000);
-                    injecting_commands_ = false;
                 }
 
                 // The state will be published once the display starts sending messages
