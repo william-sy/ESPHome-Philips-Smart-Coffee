@@ -239,8 +239,8 @@ namespace esphome
                         should_power_trip_ = false;
                         power_trip_count_ = 0;
                         power_trip_active_ = false;
-                        pending_power_on_commands_ = false;
-                        send_commands_at_ = 0;  // Clear scheduled commands
+                        // DON'T clear pending_power_on_commands_ or send_commands_at_ here!
+                        // Commands are scheduled and will be sent at the right time in loop()
                     }
 
                     ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
