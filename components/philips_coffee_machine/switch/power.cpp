@@ -84,7 +84,8 @@ namespace esphome
                 // Check if it's time to send pending power-on commands
                 if (pending_power_on_commands_ && send_commands_at_ > 0 && millis() >= send_commands_at_)
                 {
-                    ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
+                    ESP_LOGW(TAG, "⚠️ Sending power-on commands after display boot delay (pending: %d, scheduled: %u, now: %u)", 
+                             pending_power_on_commands_, send_commands_at_, millis());
                     
                     // Start blocking ALL display messages during automated power-on sequence
                     // This is OK because user initiated via phone/GUI, not physical button
