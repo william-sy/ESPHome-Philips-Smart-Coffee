@@ -97,6 +97,7 @@ switch:
           id(philip).set_invert_power_pin(false);
 
 button:
+  # Drink buttons
   - platform: philips_coffee_machine
     controller_id: philip
     action: MAKE_COFFEE
@@ -105,14 +106,67 @@ button:
 
   - platform: philips_coffee_machine
     controller_id: philip
-    action: SELECT_HOT_WATER
-    name: "Select Hot Water"
+    action: SELECT_COFFEE
+    name: "Select Coffee (2 cups)"
+    icon: mdi:coffee-outline
+    long_press: true
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_ESPRESSO
+    name: "Make Espresso"
+    icon: mdi:coffee-to-go
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_ESPRESSO
+    name: "Select Espresso (2 cups)"
+    icon: mdi:coffee-to-go-outline
+    long_press: true
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_HOT_WATER
+    name: "Make Hot Water"
     icon: mdi:tea
 
   - platform: philips_coffee_machine
     controller_id: philip
+    action: SELECT_HOT_WATER
+    name: "Select Hot Water"
+    icon: mdi:tea-outline
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_CAPPUCCINO
+    name: "Make Cappuccino"
+    icon: mdi:coffee-maker
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_CAPPUCCINO
+    name: "Select Cappuccino (2 cups)"
+    icon: mdi:coffee-maker-outline
+    long_press: true
+
+  # Maintenance buttons
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: AQUA_CLEAN
+    name: "AquaClean"
+    icon: mdi:water-check
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: CALC_CLEAN
+    name: "Calc Clean"
+    icon: mdi:spray-bottle
+
+  # Utility button
+  - platform: philips_coffee_machine
+    controller_id: philip
     action: PLAY_PAUSE
-    name: "Select play/pause"
+    name: "Play/Pause"
     icon: mdi:play-pause
 
 number:
