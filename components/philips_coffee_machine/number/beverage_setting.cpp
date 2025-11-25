@@ -168,7 +168,12 @@ namespace esphome
                     }
                 }
 
-                update_state(NAN);
+                // Don't overwrite with NAN if we already have a valid value
+                // This preserves restored/default values when machine is OFF
+                if (std::isnan(this->state))
+                {
+                    update_state(NAN);
+                }
             }
 
         } // namespace philips_beverage_setting
