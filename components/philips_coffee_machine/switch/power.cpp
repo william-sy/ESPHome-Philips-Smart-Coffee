@@ -85,14 +85,15 @@ namespace esphome
                 {
                     ESP_LOGD(TAG, "Sending power-on commands after display boot delay");
                     
+                    // Start blocking ALL display messages during automated power-on sequence
+                    // This is OK because user initiated via phone/GUI, not physical button
+                    injecting_commands_ = true;
+                    
                     // Send commands multiple times with delays to catch the display as it boots
                     for (int attempt = 0; attempt < 3; attempt++)
                     {
                         ESP_LOGD(TAG, "Command attempt %d - sending %d pre-power + power messages", 
                                  attempt + 1, power_message_repetitions_ + 1);
-                        
-                        // Block display messages ONLY while actually sending
-                        injecting_commands_ = true;
                         
                         // Send pre-power on message
                         for (unsigned int i = 0; i <= power_message_repetitions_; i++)
@@ -116,12 +117,15 @@ namespace esphome
 
                         mainboard_uart_->flush();
                         
-                        // Stop blocking immediately after sending - allow physical button to work
-                        injecting_commands_ = false;
-                        
                         if (attempt < 2)
-                            delay(300);  // Wait between attempts (without blocking messages)
+                            delay(300);  // Wait between attempts
                     }
+                    
+                    // Keep blocking for a bit longer to ensure commands reach mainboard
+                    delay(500);
+                    
+                    // Stop blocking - physical button can work again
+                    injecting_commands_ = false;
                     
                     pending_power_on_commands_ = false;
                     send_commands_at_ = 0;  // Clear scheduled time

@@ -55,27 +55,15 @@ namespace esphome
                 }
 #endif
 
-                // When power is injecting, only block status request messages from display
-                // Allow power button presses and other user actions to pass through
+                // Block messages during automated sequences
+                // When doing automated power-on via GUI/phone, we block ALL display messages
+                // to ensure our commands reach the mainboard without interference
+                // Physical button won't work during this short period, but that's OK since
+                // user initiated automation via phone/GUI, not physical button
                 bool should_block = false;
-                if (long_pressing)
+                if (long_pressing || power_injecting)
                 {
-                    should_block = true;  // Block all during long press
-                }
-                else if (power_injecting && size >= 4)
-                {
-                    // Only block pre-power status request messages during power injection
-                    // Pre-power command (sent by ESP): 0xD5 0x55 0x0A 0x01...
-                    // Display status requests: Could be different
-                    // Power commands from button: 0xD5 0x55 0x00... or 0xD5 0x55 0x01... or 0xD5 0x55 0x02...
-                    // We want to block ONLY the pre-power-like messages, not user button presses
-                    if (display_buffer[0] == message_header[0] && 
-                        display_buffer[1] == message_header[1] && 
-                        display_buffer[2] == 0x0A &&
-                        display_buffer[3] == 0x01)
-                    {
-                        should_block = true;  // Block pre-power status requests only
-                    }
+                    should_block = true;  // Block all messages during automation
                 }
 
                 if (!should_block)
