@@ -21,29 +21,7 @@ namespace esphome
             ESP_LOGI(TAG, "With invert=%d and pin=%d, display should be: %s", 
                      invert_power_pin_, initial_pin_state_, 
                      (initial_pin_state_ == !invert_power_pin_) ? "POWERED" : "OFF");
-            
-            // Perform automatic power trip on boot to wake up display
-            // The display may be in a suspended state after ESP boot and needs to be woken up
-            ESP_LOGI(TAG, "=== BOOT POWER TRIP: Starting automatic power trip to wake up display ===");
-            
-            // Calculate trip value (opposite of normal state)
-            bool trip_value = !initial_pin_state_;
-            ESP_LOGI(TAG, "BOOT POWER TRIP: Cutting power - setting GPIO8 from %d to %d", 
-                     initial_pin_state_, trip_value);
-            power_pin_->digital_write(trip_value);
-            
-            // Wait for power trip duration (use same delay as configured)
-            delay(power_trip_delay_);
-            
-            // Restore power
-            ESP_LOGI(TAG, "BOOT POWER TRIP: Restoring power - setting GPIO8 to %d", initial_pin_state_);
-            power_pin_->digital_write(initial_pin_state_);
-            
-            // Wait for display to boot and start communicating
-            ESP_LOGI(TAG, "BOOT POWER TRIP: Waiting for display to boot and stabilize...");
-            delay(2000);
-            
-            ESP_LOGI(TAG, "=== BOOT POWER TRIP: Complete - display should now be active ===");
+            ESP_LOGI(TAG, "Setup complete - use 'Manual Power Trip' button in GUI to wake display if needed");
         }
 
         void PhilipsCoffeeMachine::loop()
