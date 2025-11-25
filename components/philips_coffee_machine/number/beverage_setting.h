@@ -48,11 +48,17 @@ namespace esphome
             public:
                 void setup() override;
                 void dump_config() override;
+                void loop() override;
 
                 /**
                  * @brief Pass user intput to mainboard.
                  */
                 void control(float value);
+                
+                /**
+                 * @brief Enable restore functionality to restore last known value on startup
+                 */
+                void set_restore_value(bool restore) { restore_value_ = restore; }
 
                 /**
                  * Sets the type of this beverage setting.
@@ -132,6 +138,15 @@ namespace esphome
 
                 /// @brief reference to a status sensor
                 philips_status_sensor::StatusSensor *status_sensor_;
+                
+                /// @brief whether to restore last known value on startup
+                bool restore_value_ = false;
+                
+                /// @brief whether the restored value has been applied
+                bool restored_value_applied_ = false;
+                
+                /// @brief restored value from flash
+                float restored_value_ = NAN;
             };
 
         } // namespace philips_beverage_setting

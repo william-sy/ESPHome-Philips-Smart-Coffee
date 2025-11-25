@@ -11,11 +11,50 @@ namespace esphome
 
             void BeverageSetting::setup()
             {
+                // Load restored value if restore is enabled
+                if (restore_value_)
+                {
+                    auto restored = this->get_initial_state_with_restore_value();
+                    if (restored.has_value())
+                    {
+                        restored_value_ = restored.value();
+                        ESP_LOGI(TAG, "Restored value: %.0f", restored_value_);
+                    }
+                }
+            }
+            
+            void BeverageSetting::loop()
+            {
+                // Apply restored value when machine becomes idle after power-on
+                if (restore_value_ && !restored_value_applied_ && !std::isnan(restored_value_))
+                {
+                    if (status_sensor_->has_state())
+                    {
+                        std::string status = status_sensor_->get_raw_state();
+                        // Wait for machine to be idle before applying restored value
+                        if (status.compare(state_ready) == 0 || status.compare(state_idle) == 0)
+                        {
+                            // Check if current value doesn't match restored value
+                            if (std::isnan(this->state) || this->state != restored_value_)
+                            {
+                                ESP_LOGI(TAG, "Applying restored value: %.0f", restored_value_);
+                                target_amount_ = (int8_t)restored_value_;
+                                restored_value_applied_ = true;
+                            }
+                            else
+                            {
+                                // Value already matches, no need to apply
+                                restored_value_applied_ = true;
+                            }
+                        }
+                    }
+                }
             }
 
             void BeverageSetting::dump_config()
             {
                 LOG_NUMBER(TAG, "Philips Beverage Setting", this);
+                ESP_LOGCONFIG(TAG, "  Restore Value: %s", restore_value_ ? "YES" : "NO");
             }
 
             void BeverageSetting::control(float value)

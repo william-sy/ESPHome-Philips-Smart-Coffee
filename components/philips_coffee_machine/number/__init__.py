@@ -83,4 +83,5 @@ async def to_code(config):
     cg.add(var.set_type(config[CONF_TYPE]))
     cg.add(var.set_source(config[CONF_SOURCE]))
     cg.add(var.set_status_sensor(status_sensor))
+    cg.add(var.set_restore_value(config[CONF_RESTORE_VALUE]))
     cg.add(parent.add_beverage_setting(var))
