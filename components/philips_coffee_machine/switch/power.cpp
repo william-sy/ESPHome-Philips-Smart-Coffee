@@ -69,6 +69,13 @@ namespace esphome
                             send_commands_at_ = millis() + display_boot_delay_;
                             ESP_LOGD(TAG, "Scheduled power-on commands to be sent in %d ms (at millis=%u)", 
                                      display_boot_delay_, send_commands_at_);
+                            
+                            // Set grace period to start NOW (when power is restored)
+                            // Grace period must be longer than display boot delay to allow commands to be sent
+                            uint32_t grace_period = display_boot_delay_ + 5000;  // Extra 5s buffer after commands
+                            power_on_grace_period_end_ = millis() + grace_period;
+                            ESP_LOGD(TAG, "Grace period set to %u ms (until millis=%u)", 
+                                     grace_period, power_on_grace_period_end_);
                         }
                     }
                 }
@@ -180,9 +187,9 @@ namespace esphome
                     cleaning_pending_ = cleaning_;
                     send_commands_at_ = 0;  // Reset scheduled time (will be set after power trip)
                     
-                    // Set grace period to prevent immediate OFF detection
-                    // Display needs time to boot after power trip
-                    power_on_grace_period_end_ = millis() + POWER_ON_GRACE_PERIOD;
+                    // Grace period will be set AFTER power trip completes in loop()
+                    // Don't set it here - we need to start it when power is restored, not now
+                    power_on_grace_period_end_ = 0;
                 }
                 else
                 {

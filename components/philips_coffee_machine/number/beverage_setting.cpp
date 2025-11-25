@@ -32,21 +32,24 @@ namespace esphome
                     if (status_sensor_->has_state())
                     {
                         std::string status = status_sensor_->get_raw_state();
-                        // Wait for machine to be idle before applying restored value
+                        // Wait for machine to be idle or ready before applying restored value
                         if (status.compare(state_idle) == 0)
                         {
-                            // Check if current value doesn't match restored value
-                            if (std::isnan(this->state) || this->state != restored_value_)
+                            // Give the machine a moment to stabilize after reaching idle
+                            // Check if we have a current state and it doesn't match
+                            if (!std::isnan(this->state) && this->state != restored_value_)
                             {
-                                ESP_LOGI(TAG, "Applying restored value: %.0f", restored_value_);
+                                ESP_LOGI(TAG, "Applying restored value: %.0f (current: %.0f)", restored_value_, this->state);
                                 target_amount_ = (int8_t)restored_value_;
                                 restored_value_applied_ = true;
                             }
-                            else
+                            else if (!std::isnan(this->state) && this->state == restored_value_)
                             {
                                 // Value already matches, no need to apply
+                                ESP_LOGI(TAG, "Value already matches restored value: %.0f", restored_value_);
                                 restored_value_applied_ = true;
                             }
+                            // If state is still NAN, keep trying next loop
                         }
                     }
                 }
@@ -69,8 +72,15 @@ namespace esphome
                 if (!status_sensor_->has_state())
                     return;
 
-                // only apply status if source is currently selected
+                // Reset restored_value_applied when machine goes OFF so we reapply on next power-on
                 std::string status = status_sensor_->get_raw_state();
+                if (status.compare(state_off) == 0 && restored_value_applied_)
+                {
+                    restored_value_applied_ = false;
+                    ESP_LOGD(TAG, "Machine OFF, will reapply restored value on next power-on");
+                }
+
+                // only apply status if source is currently selected
                 if ((type_ != MILK && (source_ == COFFEE || source_ == ANY) &&
                      (status.compare(state_coffee_selected) == 0 ||
                       status.compare(state_coffee_2x_selected) == 0 ||
