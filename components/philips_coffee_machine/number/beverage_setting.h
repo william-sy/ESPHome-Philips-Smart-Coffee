@@ -1,6 +1,7 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "esphome/core/preferences.h"
 #include "esphome/components/number/number.h"
 #include "esphome/components/uart/uart.h"
 #include "../text_sensor/status_sensor.h"
@@ -110,6 +111,11 @@ namespace esphome
                     if (this->state != state)
                     {
                         publish_state(state);
+                        // Save to preferences if restore is enabled
+                        if (restore_value_ && !std::isnan(state))
+                        {
+                            this->pref_.save(&state);
+                        }
                         return;
                     }
                 }
@@ -147,6 +153,9 @@ namespace esphome
                 
                 /// @brief restored value from flash
                 float restored_value_ = NAN;
+                
+                /// @brief preference storage for restore functionality
+                ESPPreferenceObject pref_;
             };
 
         } // namespace philips_beverage_setting

@@ -14,10 +14,11 @@ namespace esphome
                 // Load restored value if restore is enabled
                 if (restore_value_)
                 {
-                    auto restored = this->get_initial_state_with_restore_value();
-                    if (restored.has_value())
+                    float restored;
+                    this->pref_ = global_preferences->make_preference<float>(this->get_object_id_hash());
+                    if (this->pref_.load(&restored))
                     {
-                        restored_value_ = restored.value();
+                        restored_value_ = restored;
                         ESP_LOGI(TAG, "Restored value: %.0f", restored_value_);
                     }
                 }
@@ -32,7 +33,7 @@ namespace esphome
                     {
                         std::string status = status_sensor_->get_raw_state();
                         // Wait for machine to be idle before applying restored value
-                        if (status.compare(state_ready) == 0 || status.compare(state_idle) == 0)
+                        if (status.compare(state_idle) == 0)
                         {
                             // Check if current value doesn't match restored value
                             if (std::isnan(this->state) || this->state != restored_value_)
