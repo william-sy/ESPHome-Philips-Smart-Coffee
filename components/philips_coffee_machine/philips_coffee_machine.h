@@ -115,6 +115,10 @@ namespace esphome
                 power_switch->set_invert_power_pin(invert_power_pin_);
                 power_switch->set_power_message_repetitions(power_message_repetitions_);
                 power_switch->set_initial_state(&initial_pin_state_);
+                // Pass status sensor reference if available (for detecting actual machine ON state)
+                if (!status_sensors_.empty()) {
+                    power_switch->set_status_sensor(status_sensors_[0]);
+                }
                 power_switches_.push_back(power_switch);
             };
 #endif

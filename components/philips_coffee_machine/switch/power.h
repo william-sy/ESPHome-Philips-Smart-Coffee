@@ -4,6 +4,7 @@
 #include "esphome/components/switch/switch.h"
 #include "esphome/components/uart/uart.h"
 #include "../commands.h"
+#include "../text_sensor/status_sensor.h"
 
 #define MESSAGE_REPETITIONS 5
 #define POWER_TRIP_RETRY_DELAY 100
@@ -110,6 +111,16 @@ namespace esphome
                 }
 
                 /**
+                 * @brief Sets the status sensor reference for detecting actual machine ON state
+                 *
+                 * @param status_sensor reference to the main status sensor
+                 */
+                void set_status_sensor(philips_status_sensor::StatusSensor *status_sensor)
+                {
+                    status_sensor_ = status_sensor;
+                }
+
+                /**
                  * @brief Sets the number of message repetitions to use while turning on the machine
                  *
                  * @param count number of repetitions
@@ -161,6 +172,8 @@ namespace esphome
                 uint32_t send_commands_at_ = 0;
                 /// @brief initial power state reference
                 bool *initial_state_;
+                /// @brief Status sensor reference for detecting actual machine ON state
+                philips_status_sensor::StatusSensor *status_sensor_ = nullptr;
             };
 
         } // namespace philips_power_switch

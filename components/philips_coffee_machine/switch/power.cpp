@@ -1,5 +1,6 @@
 #include "esphome/core/log.h"
 #include "power.h"
+#include "../localization.h"
 
 namespace esphome
 {
@@ -246,12 +247,29 @@ namespace esphome
                         // Commands are scheduled and will be sent at the right time in loop()
                     }
                     
-                    // If machine is ON and we're in grace period, end grace period early
-                    // This means power-on was successful and machine is responding
+                    // If machine is ON and we're in grace period, end grace period early ONLY if we have actual machine status
+                    // Don't end early just because display is sending UART messages - wait for confirmed machine state
                     if (state && power_on_grace_period_end_ > 0)
                     {
-                        ESP_LOGD(TAG, "Machine ON detected, ending grace period early");
-                        power_on_grace_period_end_ = 0;
+                        bool has_valid_status = false;
+                        if (status_sensor_ != nullptr && status_sensor_->has_state())
+                        {
+                            std::string status = status_sensor_->state;
+                            // Check if status indicates machine is actually ON (not Off, not Unknown)
+                            // Valid ON states: Idle, Preparing, Cleaning, Coffee Selected, etc.
+                            has_valid_status = (status != state_off && status != state_unknown && !status.empty());
+                        }
+                        
+                        if (has_valid_status)
+                        {
+                            ESP_LOGD(TAG, "Machine ON confirmed by status sensor (%s), ending grace period early", 
+                                     status_sensor_->state.c_str());
+                            power_on_grace_period_end_ = 0;
+                        }
+                        else
+                        {
+                            ESP_LOGD(TAG, "Display communicating but no valid machine status yet - keeping grace period");
+                        }
                     }
 
                     ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
