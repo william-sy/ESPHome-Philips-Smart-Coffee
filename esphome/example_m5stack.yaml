@@ -117,6 +117,7 @@ button:
 
 number:
   - platform: philips_coffee_machine
+    id: coffee_beans
     type: bean
     name: "Coffee beans"
     controller_id: philip
@@ -125,6 +126,7 @@ number:
     restore_value: true
 
   - platform: philips_coffee_machine
+    id: coffee_size
     type: size
     name: "Coffee size"
     controller_id: philip

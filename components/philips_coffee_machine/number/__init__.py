@@ -47,7 +47,7 @@ def validate_enum(config):
     return config
 
 
-CONFIG_SCHEMA = cv.Any(
+CONFIG_SCHEMA = cv.All(
     number.number_schema(
         BeverageSettings,
     ).extend(
