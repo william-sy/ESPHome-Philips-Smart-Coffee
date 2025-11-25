@@ -178,6 +178,7 @@ namespace esphome
                     // Mark that we need to send power-on commands after power trip
                     pending_power_on_commands_ = true;
                     cleaning_pending_ = cleaning_;
+                    send_commands_at_ = 0;  // Reset scheduled time (will be set after power trip)
                     
                     // Set grace period to prevent immediate OFF detection
                     // Display needs time to boot after power trip
@@ -232,6 +233,7 @@ namespace esphome
                         power_trip_count_ = 0;
                         power_trip_active_ = false;
                         pending_power_on_commands_ = false;
+                        send_commands_at_ = 0;  // Clear scheduled commands
                     }
 
                     ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
@@ -245,6 +247,7 @@ namespace esphome
                         power_trip_count_ = 0;
                         power_trip_active_ = false;
                         pending_power_on_commands_ = false;
+                        send_commands_at_ = 0;  // Clear any scheduled commands
                     }
                 }
             }
