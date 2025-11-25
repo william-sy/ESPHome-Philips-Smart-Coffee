@@ -242,6 +242,14 @@ namespace esphome
                         // DON'T clear pending_power_on_commands_ or send_commands_at_ here!
                         // Commands are scheduled and will be sent at the right time in loop()
                     }
+                    
+                    // If machine is ON and we're in grace period, end grace period early
+                    // This means power-on was successful and machine is responding
+                    if (state && power_on_grace_period_end_ > 0)
+                    {
+                        ESP_LOGD(TAG, "Machine ON detected, ending grace period early");
+                        power_on_grace_period_end_ = 0;
+                    }
 
                     ESP_LOGD(TAG, "Publishing state change: %s (grace period end: %u, now: %u)", 
                              state ? "ON" : "OFF", power_on_grace_period_end_, now);

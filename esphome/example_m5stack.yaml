@@ -122,20 +122,17 @@ button:
     name: "Make Cappuccino"
     icon: mdi:coffee-maker
 
-  # Advanced drink options (2 cups - in config section)
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_COFFEE
     name: "Coffee (2 cups)"
     icon: mdi:coffee-outline
-    long_press: true
 
   - platform: philips_coffee_machine
     controller_id: philip
     action: SELECT_ESPRESSO
     name: "Espresso (2 cups)"
     icon: mdi:coffee-to-go-outline
-    long_press: true
 
   - platform: philips_coffee_machine
     controller_id: philip
@@ -148,7 +145,6 @@ button:
     action: SELECT_CAPPUCCINO
     name: "Cappuccino (2 cups)"
     icon: mdi:coffee-maker-outline
-    long_press: true
 
   # Maintenance buttons (in config section)
   - platform: philips_coffee_machine
