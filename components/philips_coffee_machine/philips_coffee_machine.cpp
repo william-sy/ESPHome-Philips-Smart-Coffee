@@ -16,21 +16,33 @@ namespace esphome
             power_pin_->setup();
             power_pin_->pin_mode(gpio::FLAG_OUTPUT);
             power_pin_->digital_write(initial_pin_state_);
-            ESP_LOGI(TAG, "Power pin initialized to: %d (invert: %d, should %s power to display)", 
-                     initial_pin_state_, invert_power_pin_, initial_pin_state_ == !invert_power_pin_ ? "provide" : "cut");
+            ESP_LOGI(TAG, "Power pin GPIO8 initialized to: %d (invert: %d)", 
+                     initial_pin_state_, invert_power_pin_);
+            ESP_LOGI(TAG, "With invert=%d and pin=%d, display should be: %s", 
+                     invert_power_pin_, initial_pin_state_, 
+                     (initial_pin_state_ == !invert_power_pin_) ? "POWERED" : "OFF");
+            ESP_LOGI(TAG, "Waiting for display UART activity on GPIO6 (RX)...");
         }
 
         void PhilipsCoffeeMachine::loop()
         {
             uint8_t display_buffer[DISPLAY_BUFFER_SIZE];
             uint8_t mainboard_buffer[MAINBOARD_BUFFER_SIZE];
+            
+            static uint32_t last_display_log = 0;
+            static bool display_ever_active = false;
 
             // Pipe display to mainboard
             if (display_uart_.available())
             {
+                if (!display_ever_active) {
+                    ESP_LOGI(TAG, "Display UART is now active - receiving data");
+                    display_ever_active = true;
+                }
+                
                 uint8_t size = std::min(display_uart_.available(), DISPLAY_BUFFER_SIZE);
                 display_uart_.read_array(display_buffer, size);
-                ESP_LOGV(TAG, "Display UART received %d bytes", size);
+                ESP_LOGD(TAG, "Display UART received %d bytes", size);
 
                 // Check if a action button is currently performing a long press
                 bool long_pressing = false;
