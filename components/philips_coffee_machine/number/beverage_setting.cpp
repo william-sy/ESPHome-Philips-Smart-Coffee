@@ -20,15 +20,17 @@ namespace esphome
                     {
                         restored_value_ = restored;
                         ESP_LOGI(TAG, "Restored value: %.0f", restored_value_);
-                        // Publish the restored value immediately so GUI shows it
-                        this->publish_state(restored_value_);
+                        // Don't publish yet - let update_status read from machine first
+                        // The restored value will be applied when machine becomes idle
                     }
                     else
                     {
-                        // No saved value - publish a default value (middle of range)
+                        // No saved value - set default as restored value so physical buttons work
                         float default_value = (this->traits.get_min_value() + this->traits.get_max_value()) / 2.0f;
-                        ESP_LOGI(TAG, "No saved value - using default: %.0f", default_value);
-                        this->publish_state(default_value);
+                        restored_value_ = default_value;
+                        ESP_LOGI(TAG, "No saved value - will use default: %.0f", default_value);
+                        // Save this default so it persists
+                        this->pref_.save(&default_value);
                     }
                 }
             }
@@ -168,12 +170,9 @@ namespace esphome
                     }
                 }
 
-                // Don't overwrite with NAN if we already have a valid value
-                // This preserves restored/default values when machine is OFF
-                if (std::isnan(this->state))
-                {
-                    update_state(NAN);
-                }
+                // When no drink is selected, update to NAN
+                // This allows ESP to track when machine state is unknown
+                update_state(NAN);
             }
 
         } // namespace philips_beverage_setting

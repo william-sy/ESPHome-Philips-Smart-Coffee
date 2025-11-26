@@ -1,0 +1,327 @@
+esphome:
+  name: ph-ep2235-coffee
+  friendly_name: PH-EP2235-COFFEE
+  # Automatically wake display after ESP boot
+  # Strategy: Always power ON (wakes display), then turn OFF if it was off before
+  # This ensures display communication is properly initialized
+  on_boot:
+    priority: -100  # Run after everything else is set up
+    then:
+      - logger.log: "Boot complete - waiting 10s for components to be ready"
+      - delay: 10s
+      - logger.log: "=== AUTO BOOT: Checking machine status ==="
+      - lambda: |-
+          auto status_state = id(status).state;
+          ESP_LOGI("auto_boot", "Current status: %s", status_state.c_str());
+          
+          // Check if machine is actually ON (not Off/Unknown)
+          bool machine_was_on = (status_state != "Off" && status_state != "Unknown" && !status_state.empty());
+          
+          if (machine_was_on) {
+            ESP_LOGW("auto_boot", "⚠️ Machine was ON during ESP reboot - doing power ON to re-init display");
+          } else {
+            ESP_LOGI("auto_boot", "Machine was OFF - will power ON then back OFF to wake display");
+          }
+          
+          // Always power on to properly wake and initialize display
+          // Store whether we need to turn back off
+          id(philip).set_pending_power_off(!machine_was_on);
+      - switch.turn_on: power_switch
+      - logger.log: "=== AUTO BOOT: Power-on command sent ==="
+      - delay: 20s  # Wait for cleaning cycle to complete
+      - lambda: |-
+          // If machine was off before, turn it back off now
+          if (id(philip).get_pending_power_off()) {
+            ESP_LOGI("auto_boot", "Machine was OFF before reboot - turning back OFF now");
+            id(power_switch).turn_off();
+            id(philip).set_pending_power_off(false);
+          } else {
+            ESP_LOGI("auto_boot", "Machine stays ON (was already running before reboot)");
+          }
+      - logger.log: "=== AUTO BOOT: Complete ==="
+
+esp32:
+  board: m5stack-atoms3
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    
+# Enable logging
+logger:
+  # Disable serial logging
+  baud_rate: 0
+
+external_components:
+  - source: github://william-sy/ESPHome-Philips-Smart-Coffee@main
+    components: [ philips_coffee_machine ]
+    refresh: always
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  power_save_mode: light
+  ap:
+    ssid: "Ph-Ep2235-Coffee"
+    password: "Ph-Ep2235-Coffee"
+
+api:
+  encryption:
+    key: "Ph-Ep2235-Coffee"
+
+captive_portal:
+
+# Enable Web server.
+web_server:
+  port: 80
+  version: 3
+
+uart:
+  # UART connected to the mainboard
+  - tx_pin: GPIO39
+    rx_pin: GPIO38
+    baud_rate: 115200
+    id: uart_mainboard
+
+  # UART connected to the display
+  - tx_pin: GPIO5
+    rx_pin: GPIO6
+    baud_rate: 115200
+    id: uart_display
+
+philips_coffee_machine:
+  display_uart: uart_display
+  mainboard_uart: uart_mainboard
+  power_pin: GPIO8
+  power_trip_delay: 3000ms  # Can be adjusted via UI number entity below
+  invert_power_pin: true     # Can be toggled via UI switch entity below
+  display_boot_delay: 5000ms  # Initial value, adjustable via UI
+  id: philip
+
+text_sensor:
+  - platform: philips_coffee_machine
+    controller_id: philip
+    id: status
+    name: "Status"
+
+switch:
+  - platform: philips_coffee_machine
+    controller_id: philip
+    id: power_switch
+    name: "Power"
+    icon: mdi:coffee-maker
+    clean: true  # Default: flush on power-on (machine's normal behavior)
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    name: "Power (No Cleaning)"
+    icon: mdi:coffee-maker-outline
+    clean: false  # Skip cleaning cycle for quick power-on
+
+  # Power pin inversion control (toggle from UI)
+  - platform: template
+    name: "Invert Power Pin"
+    id: invert_power_pin_switch
+    icon: mdi:swap-vertical
+    entity_category: config
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - lambda: |-
+          // When inverting, initial_state should be LOW (0)
+          id(philip).set_invert_power_pin(true);
+    on_turn_off:
+      - lambda: |-
+          // When not inverting, initial_state should be HIGH (1)
+          id(philip).set_invert_power_pin(false);
+
+button:
+  # Direct make buttons (instant brewing, no customization)
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_COFFEE
+    name: "Make Coffee"
+    icon: mdi:coffee
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_ESPRESSO
+    name: "Make Espresso"
+    icon: mdi:coffee-to-go
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_HOT_WATER
+    name: "Make Hot Water"
+    icon: mdi:tea
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: MAKE_CAPPUCCINO
+    name: "Make Cappuccino"
+    icon: mdi:coffee-maker
+
+  # Select buttons for 1 cup (choose drink, customize, then press Play/Pause to start)
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_COFFEE
+    id: select_coffee_button
+    name: "Select Coffee (1 cup)"
+    icon: mdi:coffee-outline
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_ESPRESSO
+    id: select_espresso_button
+    name: "Select Espresso (1 cup)"
+    icon: mdi:coffee-to-go-outline
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_HOT_WATER
+    id: select_hot_water_button
+    name: "Select Hot Water"
+    icon: mdi:tea-outline
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: SELECT_CAPPUCCINO
+    id: select_cappuccino_button
+    name: "Select Cappuccino (1 cup)"
+    icon: mdi:coffee-maker-outline
+
+  # Select buttons for 2 cups (press drink button twice, customize, then Play/Pause)
+  - platform: template
+    name: "Select Coffee (2 cups)"
+    icon: mdi:coffee-outline
+    on_press:
+      - button.press: select_coffee_button
+      - delay: 150ms
+      - button.press: select_coffee_button
+
+  - platform: template
+    name: "Select Espresso (2 cups)"
+    icon: mdi:coffee-to-go-outline
+    on_press:
+      - button.press: select_espresso_button
+      - delay: 150ms
+      - button.press: select_espresso_button
+
+  - platform: template
+    name: "Select Cappuccino (2 cups)"
+    icon: mdi:coffee-maker-outline
+    on_press:
+      - button.press: select_cappuccino_button
+      - delay: 150ms
+      - button.press: select_cappuccino_button
+
+  # Maintenance buttons (in config section)
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: AQUA_CLEAN
+    name: "AquaClean"
+    icon: mdi:water-check
+    entity_category: config
+
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: CALC_CLEAN
+    name: "Calc Clean"
+    icon: mdi:spray-bottle
+    entity_category: config
+
+  # Utility button (in config section)
+  - platform: philips_coffee_machine
+    controller_id: philip
+    action: PLAY_PAUSE
+    name: "Play/Pause"
+    icon: mdi:play-pause
+    entity_category: config
+
+  # Manual power trip button for testing (in config section)
+  - platform: template
+    id: manual_power_trip_button
+    name: "Manual Power Trip"
+    icon: mdi:power-cycle
+    entity_category: config
+    on_press:
+      then:
+        - logger.log: "=== MANUAL POWER TRIP: Starting ==="
+        - lambda: |-
+            // Get current pin state
+            auto philip_ptr = id(philip);
+            bool current_state = philip_ptr->get_initial_pin_state();
+            bool invert = philip_ptr->get_invert_power_pin();
+            
+            ESP_LOGI("manual_power_trip", "Current state: %d, Invert: %d", current_state, invert);
+            
+            // Calculate trip value (opposite of current)
+            bool trip_value = !current_state;
+            ESP_LOGI("manual_power_trip", "Cutting power - GPIO8 = %d", trip_value);
+            philip_ptr->get_power_pin()->digital_write(trip_value);
+        - delay: 3000ms  # Power trip duration
+        - lambda: |-
+            auto philip_ptr = id(philip);
+            bool restore_value = philip_ptr->get_initial_pin_state();
+            ESP_LOGI("manual_power_trip", "Restoring power - GPIO8 = %d", restore_value);
+            philip_ptr->get_power_pin()->digital_write(restore_value);
+        - logger.log: "=== MANUAL POWER TRIP: Complete - waiting for display to boot ==="
+        - delay: 2000ms
+        - logger.log: "=== MANUAL POWER TRIP: Display should now be active ==="
+
+number:
+  - platform: philips_coffee_machine
+    id: coffee_beans
+    type: bean
+    name: "Coffee beans"
+    controller_id: philip
+    status_sensor_id: status
+    source: COFFEE
+    restore_value: true
+
+  - platform: philips_coffee_machine
+    id: coffee_size
+    type: size
+    name: "Coffee size"
+    controller_id: philip
+    status_sensor_id: status
+    source: COFFEE
+    restore_value: true
+
+  # Power trip delay control (adjustable from UI)
+  - platform: template
+    name: "Power Trip Delay"
+    id: power_trip_delay_number
+    icon: mdi:timer-cog
+    entity_category: config
+    unit_of_measurement: "ms"
+    min_value: 500
+    max_value: 10000
+    step: 500
+    initial_value: 3000
+    optimistic: true
+    mode: box
+    on_value:
+      then:
+        - lambda: |-
+            // Update the power trip delay in the controller
+            id(philip).set_power_trip_delay((uint32_t)x);
+
+  # Display boot delay control (adjustable from UI)
+  - platform: template
+    name: "Display Boot Delay"
+    id: display_boot_delay_number
+    icon: mdi:timer-sand
+    entity_category: config
+    unit_of_measurement: "ms"
+    min_value: 1000
+    max_value: 15000
+    step: 500
+    initial_value: 5000
+    optimistic: true
+    mode: box
+    on_value:
+      then:
+        - lambda: |-
+            // Update the display boot delay in the controller
+            id(philip).set_display_boot_delay((uint32_t)x);
