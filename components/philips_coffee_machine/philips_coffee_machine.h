@@ -66,6 +66,7 @@ namespace esphome
             void set_invert_power_pin(bool invert)
             {
                 initial_pin_state_ = !invert;
+                invert_power_pin_ = invert;
             }
 
             /**
@@ -79,6 +80,16 @@ namespace esphome
             }
 
             /**
+             * @brief Display boot delay before sending power-on commands
+             *
+             * @param time delay in ms
+             */
+            void set_display_boot_delay(uint32_t time)
+            {
+                display_boot_delay_ = time;
+            }
+
+            /**
              * @brief The number of message repetitions used while turning on the machine
              *
              * @param count numer of message to use
@@ -87,6 +98,31 @@ namespace esphome
             {
                 power_message_repetitions_ = count;
             }
+
+            /**
+             * @brief Get the power pin for manual control (testing)
+             */
+            GPIOPin* get_power_pin() { return power_pin_; }
+
+            /**
+             * @brief Get the initial pin state for manual control (testing)
+             */
+            bool get_initial_pin_state() { return initial_pin_state_; }
+
+            /**
+             * @brief Get the invert power pin setting for manual control (testing)
+             */
+            bool get_invert_power_pin() { return invert_power_pin_; }
+
+            /**
+             * @brief Set pending power off flag (for boot sequence)
+             */
+            void set_pending_power_off(bool pending) { pending_power_off_ = pending; }
+
+            /**
+             * @brief Get pending power off flag (for boot sequence)
+             */
+            bool get_pending_power_off() { return pending_power_off_; }
 
 #ifdef USE_SWITCH
             /**
@@ -100,8 +136,14 @@ namespace esphome
                 power_switch->set_mainboard_uart(&mainboard_uart_);
                 power_switch->set_power_pin(power_pin_);
                 power_switch->set_power_trip_delay(power_trip_delay_);
+                power_switch->set_display_boot_delay(display_boot_delay_);
+                power_switch->set_invert_power_pin(invert_power_pin_);
                 power_switch->set_power_message_repetitions(power_message_repetitions_);
                 power_switch->set_initial_state(&initial_pin_state_);
+                // Pass status sensor reference if available (for detecting actual machine ON state)
+                if (!status_sensors_.empty()) {
+                    power_switch->set_status_sensor(status_sensors_[0]);
+                }
                 power_switches_.push_back(power_switch);
             };
 #endif
@@ -163,11 +205,20 @@ namespace esphome
             /// @brief the initial power pin state (may be inverted through user configuration)
             bool initial_pin_state_ = true;
 
+            /// @brief whether the power pin should be inverted
+            bool invert_power_pin_ = false;
+
             /// @brief the number of message repetitions to use while turning on the machine
             uint power_message_repetitions_ = 5;
 
             /// @brief length of power outage applied to the display
             uint32_t power_trip_delay_ = 500;
+
+            /// @brief delay after power restore before sending commands (display boot time)
+            uint32_t display_boot_delay_ = 5000;
+
+            /// @brief flag to indicate machine should be powered off after boot sequence
+            bool pending_power_off_ = false;
 
 #ifdef USE_SWITCH
             /// @brief power switch reference

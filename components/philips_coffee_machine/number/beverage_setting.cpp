@@ -11,11 +11,65 @@ namespace esphome
 
             void BeverageSetting::setup()
             {
+                // Load restored value if restore is enabled
+                if (restore_value_)
+                {
+                    float restored;
+                    this->pref_ = global_preferences->make_preference<float>(this->get_object_id_hash());
+                    if (this->pref_.load(&restored))
+                    {
+                        restored_value_ = restored;
+                        ESP_LOGI(TAG, "Restored value: %.0f", restored_value_);
+                        // Don't publish yet - let update_status read from machine first
+                        // The restored value will be applied when machine becomes idle
+                    }
+                    else
+                    {
+                        // No saved value - set default as restored value so physical buttons work
+                        float default_value = (this->traits.get_min_value() + this->traits.get_max_value()) / 2.0f;
+                        restored_value_ = default_value;
+                        ESP_LOGI(TAG, "No saved value - will use default: %.0f", default_value);
+                        // Save this default so it persists
+                        this->pref_.save(&default_value);
+                    }
+                }
+            }
+            
+            void BeverageSetting::loop()
+            {
+                // Apply restored value when machine becomes idle after power-on
+                if (restore_value_ && !restored_value_applied_ && !std::isnan(restored_value_))
+                {
+                    if (status_sensor_->has_state())
+                    {
+                        std::string status = status_sensor_->get_raw_state();
+                        // Wait for machine to be idle or ready before applying restored value
+                        if (status.compare(state_idle) == 0)
+                        {
+                            // Give the machine a moment to stabilize after reaching idle
+                            // Check if we have a current state and it doesn't match
+                            if (!std::isnan(this->state) && this->state != restored_value_)
+                            {
+                                ESP_LOGI(TAG, "Applying restored value: %.0f (current: %.0f)", restored_value_, this->state);
+                                target_amount_ = (int8_t)restored_value_;
+                                restored_value_applied_ = true;
+                            }
+                            else if (!std::isnan(this->state) && this->state == restored_value_)
+                            {
+                                // Value already matches, no need to apply
+                                ESP_LOGI(TAG, "Value already matches restored value: %.0f", restored_value_);
+                                restored_value_applied_ = true;
+                            }
+                            // If state is still NAN, keep trying next loop
+                        }
+                    }
+                }
             }
 
             void BeverageSetting::dump_config()
             {
                 LOG_NUMBER(TAG, "Philips Beverage Setting", this);
+                ESP_LOGCONFIG(TAG, "  Restore Value: %s", restore_value_ ? "YES" : "NO");
             }
 
             void BeverageSetting::control(float value)
@@ -29,8 +83,15 @@ namespace esphome
                 if (!status_sensor_->has_state())
                     return;
 
-                // only apply status if source is currently selected
+                // Reset restored_value_applied when machine goes OFF so we reapply on next power-on
                 std::string status = status_sensor_->get_raw_state();
+                if (status.compare(state_off) == 0 && restored_value_applied_)
+                {
+                    restored_value_applied_ = false;
+                    ESP_LOGD(TAG, "Machine OFF, will reapply restored value on next power-on");
+                }
+
+                // only apply status if source is currently selected
                 if ((type_ != MILK && (source_ == COFFEE || source_ == ANY) &&
                      (status.compare(state_coffee_selected) == 0 ||
                       status.compare(state_coffee_2x_selected) == 0 ||
@@ -109,6 +170,8 @@ namespace esphome
                     }
                 }
 
+                // When no drink is selected, update to NAN
+                // This allows ESP to track when machine state is unknown
                 update_state(NAN);
             }
 
