@@ -234,7 +234,7 @@ button:
   - platform: philips_coffee_machine
     controller_id: philip
     action: PLAY_PAUSE
-    name: "Play/Pause"
+    name: "Play-Pause"
     icon: mdi:play-pause
     entity_category: config
 
