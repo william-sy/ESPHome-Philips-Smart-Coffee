@@ -1,13 +1,14 @@
+#include <cstddef>
+
 #include "esphome/core/log.h"
 #include "philips_coffee_machine.h"
-
-#define MAINBOARD_BUFFER_SIZE 19
-#define DISPLAY_BUFFER_SIZE 12
 
 namespace esphome
 {
     namespace philips_coffee_machine
     {
+        static constexpr std::size_t MAINBOARD_BUFFER_SIZE = 19;
+        static constexpr std::size_t DISPLAY_BUFFER_SIZE = 12;
 
         static const char *TAG = "philips_coffee_machine";
 
@@ -16,17 +17,23 @@ namespace esphome
             power_pin_->setup();
             power_pin_->pin_mode(gpio::FLAG_OUTPUT);
             power_pin_->digital_write(initial_pin_state_);
+            ESP_LOGI(TAG, "Power pin GPIO8 initialized to: %d (invert: %d)", 
+                     initial_pin_state_, invert_power_pin_);
+            ESP_LOGI(TAG, "With invert=%d and pin=%d, display should be: %s", 
+                     invert_power_pin_, initial_pin_state_, 
+                     (initial_pin_state_ == !invert_power_pin_) ? "POWERED" : "OFF");
+            ESP_LOGI(TAG, "Setup complete - use 'Manual Power Trip' button in GUI to wake display if needed");
         }
 
         void PhilipsCoffeeMachine::loop()
         {
             uint8_t display_buffer[DISPLAY_BUFFER_SIZE];
             uint8_t mainboard_buffer[MAINBOARD_BUFFER_SIZE];
-
+            
             // Pipe display to mainboard
             if (display_uart_.available())
             {
-                uint8_t size = std::min(display_uart_.available(), DISPLAY_BUFFER_SIZE);
+                std::size_t size = std::min(display_uart_.available(), DISPLAY_BUFFER_SIZE);
                 display_uart_.read_array(display_buffer, size);
 
                 // Check if a action button is currently performing a long press
@@ -42,9 +49,32 @@ namespace esphome
                 }
 #endif
 
-                // Drop messages if button long-press is currently injecting messages
-                if (!long_pressing)
+                // Check if power switch is injecting power-on commands
+                bool power_injecting = false;
+#ifdef USE_SWITCH
+                for (philips_power_switch::Power *power_switch : power_switches_)
+                {
+                    if (power_switch->is_injecting_commands())
+                    {
+                        power_injecting = true;
+                        break;
+                    }
+                }
+#endif
+
+                // Block messages during automated sequences
+                // When doing automated power-on via GUI/phone, we block ALL display messages
+                // to ensure our commands reach the mainboard without interference
+                bool should_block = false;
+                if (long_pressing || power_injecting)
+                {
+                    should_block = true;  // Block all messages during automation
+                }
+
+                if (!should_block)
+                {
                     mainboard_uart_.write_array(display_buffer, size);
+                }
                 last_message_from_display_time_ = millis();
             }
 
@@ -67,7 +97,7 @@ namespace esphome
             // Pipe to display
             if (mainboard_uart_.available())
             {
-                uint8_t size = std::min(mainboard_uart_.available(), MAINBOARD_BUFFER_SIZE - 2);
+                std::size_t size = std::min(mainboard_uart_.available(), MAINBOARD_BUFFER_SIZE - 2);
                 mainboard_uart_.read_array(mainboard_buffer + 2, size);
 
                 display_uart_.write_array(mainboard_buffer + 2, size);

@@ -104,7 +104,7 @@ button:
   - platform: philips_coffee_machine
     controller_id: coffee_machine
     action: PLAY_PAUSE
-    name: "Select play/pause"
+    name: "Select Play-Pause"
     icon: mdi:play-pause
 
 number:
